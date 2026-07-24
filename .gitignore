@@ -6,3 +6,4 @@ bun.lockb
 *.log
 *.png
 .DS_Store
+.vercel
