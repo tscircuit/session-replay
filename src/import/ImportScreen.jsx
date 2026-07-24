@@ -20,6 +20,7 @@ import { buildReplay, parseSessionText } from "../replay";
 import { useSearchParamState } from "../routing/useSearchParamState";
 import { SAMPLE_SESSION } from "../sample";
 import { Mark } from "../ui/Mark";
+import { loadSessionCatalog, sessionContentUrl } from "./sessionCatalog";
 
 function Button({ className = "", children, ...props }) {
   return (
@@ -53,6 +54,7 @@ export function ImportScreen({ onLoad, error, setError }) {
   const [sessionQuery, setSessionQuery] = useSearchParamState("q");
   const [sessionSort, setSessionSort] = useSearchParamState("sort", "recent");
   const [sessionStatus, setSessionStatus] = useState("loading");
+  const [sessionOrigin, setSessionOrigin] = useState("");
   const [openingPath, setOpeningPath] = useState("");
 
   const readFile = useCallback(
@@ -72,14 +74,15 @@ export function ImportScreen({ onLoad, error, setError }) {
   const findSessions = useCallback(async (signal) => {
     setSessionStatus("loading");
     try {
-      const response = await fetch("/api/sessions", { signal });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "Could not find local sessions.");
-      setSessions(result.sessions || []);
+      const fetcher = (url) => fetch(url, { signal });
+      const result = await loadSessionCatalog(fetcher);
+      setSessions(result.sessions);
+      setSessionOrigin(result.origin);
       setSessionStatus("ready");
     } catch (reason) {
       if (reason?.name === "AbortError") return;
       setSessions([]);
+      setSessionOrigin("");
       setSessionStatus("unavailable");
     }
   }, []);
@@ -94,7 +97,7 @@ export function ImportScreen({ onLoad, error, setError }) {
     setOpeningPath(session.path);
     setError("");
     try {
-      const response = await fetch(`/api/session?path=${encodeURIComponent(session.path)}`);
+      const response = await fetch(sessionContentUrl(session));
       if (!response.ok) {
         const result = await response.json().catch(() => ({}));
         throw new Error(result.error || "Could not open that session.");
@@ -162,18 +165,18 @@ export function ImportScreen({ onLoad, error, setError }) {
           tool calls, and every file state along the way.
         </p>
         <div className="session-sources">
-          <section className="local-sessions" aria-labelledby="local-sessions-title">
+          <section className="local-sessions" aria-labelledby="session-replays-title">
           <header className="local-sessions-header">
             <div>
               <span className="local-sessions-icon"><HardDrive size={15} /></span>
               <div>
-                <h2 id="local-sessions-title">Local sessions</h2>
+                <h2 id="session-replays-title">Session replays</h2>
                 <p>
                   {sessionStatus === "loading"
-                    ? "Looking in ~/.codex/sessions"
+                    ? "Finding available sessions"
                     : sessionStatus === "ready"
-                      ? `${sessions.length} recent session${sessions.length === 1 ? "" : "s"} found`
-                      : "Automatic discovery is unavailable"}
+                      ? `${sessions.length} ${sessionOrigin === "local" ? "local" : "featured"} session${sessions.length === 1 ? "" : "s"}`
+                      : "Session discovery is unavailable"}
                 </p>
               </div>
             </div>
@@ -181,8 +184,8 @@ export function ImportScreen({ onLoad, error, setError }) {
               className="refresh-sessions"
               onClick={() => findSessions()}
               disabled={sessionStatus === "loading"}
-              aria-label="Refresh local sessions"
-              title="Refresh local sessions"
+              aria-label="Refresh sessions"
+              title="Refresh sessions"
             >
               <RefreshCw size={15} className={sessionStatus === "loading" ? "spinning" : ""} />
             </button>
@@ -195,7 +198,7 @@ export function ImportScreen({ onLoad, error, setError }) {
                   value={sessionQuery}
                   onChange={(event) => setSessionQuery(event.target.value)}
                   placeholder="Search project, time, or size"
-                  aria-label="Search local sessions by project, time, or size"
+                  aria-label="Search sessions by project, time, or size"
                 />
                 {sessionQuery && (
                   <button onClick={() => setSessionQuery("")} aria-label="Clear session search">
@@ -203,7 +206,7 @@ export function ImportScreen({ onLoad, error, setError }) {
                   </button>
                 )}
               </label>
-              <label className="session-sort" title="Sort local sessions">
+              <label className="session-sort" title="Sort sessions">
                 <ArrowUpDown size={13} />
                 <select
                   value={sessionSort}
@@ -225,11 +228,11 @@ export function ImportScreen({ onLoad, error, setError }) {
             )}
             {sessionStatus === "unavailable" && (
               <div className="session-state">
-                Start the local Vite server to browse Codex sessions automatically.
+                No session catalog is available. You can still upload a session below.
               </div>
             )}
             {sessionStatus === "ready" && !sessions.length && (
-              <div className="session-state">No sessions found in ~/.codex/sessions.</div>
+              <div className="session-state">No sessions found.</div>
             )}
             {sessionStatus === "ready" && sessions.length > 0 && !visibleSessions.length && (
               <div className="session-state">No sessions match “{sessionQuery}”.</div>
@@ -323,7 +326,7 @@ export function ImportScreen({ onLoad, error, setError }) {
         )}
         <div className="privacy-note">
           <div><span className="privacy-dot" /><strong>Private by design</strong></div>
-          <p>Your session never leaves this device.</p>
+          <p>Files you upload never leave this device.</p>
         </div>
       </section>
       <div className="import-grid" aria-hidden="true" />

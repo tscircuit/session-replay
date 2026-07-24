@@ -23,6 +23,7 @@ import {
 import { Mark } from "../ui/Mark";
 import { ResizeHandle } from "../ui/ResizeHandle";
 import { useSearchParamState } from "../routing/useSearchParamState";
+import { useTreeSitterHighlight } from "./sourceHighlight";
 
 function formatElapsedTimestamp(start, value) {
   const from = new Date(start).getTime();
@@ -250,6 +251,7 @@ function FileTree({ files, selected, onSelect, query }) {
 }
 
 function SourceCode({ file }) {
+  const lines = useTreeSitterHighlight(file?.path || "", file?.deleted ? "" : file?.content || "");
   if (!file) {
     return (
       <div className="code-empty">
@@ -268,7 +270,6 @@ function SourceCode({ file }) {
       </div>
     );
   }
-  const lines = (file.content || "").split("\n");
   return (
     <div className="source-wrap">
       {file.approximate && (
@@ -279,9 +280,17 @@ function SourceCode({ file }) {
       )}
       <pre className="source-code">
         {lines.map((line, index) => (
-          <span className="code-line" key={`${index}-${line}`}>
+          <span className="code-line" key={index}>
             <span className="line-no">{index + 1}</span>
-            <code>{line || " "}</code>
+            <code>
+              {line.length
+                ? line.map((segment, segmentIndex) => (
+                  <span className={segment.className} key={`${segmentIndex}-${segment.text}`}>
+                    {segment.text}
+                  </span>
+                ))
+                : " "}
+            </code>
           </span>
         ))}
       </pre>

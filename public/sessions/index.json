@@ -1,0 +1,94 @@
+{
+  "sessions": [
+    {
+      "path": "length-matching-solver.jsonl",
+      "filename": "length-matching-solver.jsonl",
+      "id": "019f91e5-ca3c-73e0-86b5-16d528c705a0",
+      "cwd": "/workspace/length-matching-solver",
+      "title": "length-matching-solver",
+      "startedAt": "2026-07-24T02:13:03.680Z",
+      "modifiedAt": "2026-07-24T02:13:03.680Z",
+      "size": 910201,
+      "changeStats": {
+        "additions": 1537,
+        "deletions": 374,
+        "files": 65
+      }
+    },
+    {
+      "path": "multi-component-dataset.jsonl",
+      "filename": "multi-component-dataset.jsonl",
+      "id": "019f3899-68ca-7311-b625-f893e726aa68",
+      "cwd": "/workspace/multi-component-dataset",
+      "title": "multi-component-dataset",
+      "startedAt": "2026-07-06T18:03:25.775Z",
+      "modifiedAt": "2026-07-06T18:03:25.775Z",
+      "size": 968602,
+      "changeStats": {
+        "additions": 818,
+        "deletions": 92,
+        "files": 44
+      }
+    },
+    {
+      "path": "tscircuit-autorouter.jsonl",
+      "filename": "tscircuit-autorouter.jsonl",
+      "id": "019e5ef1-688c-7ba1-829f-795c2f3bc0bc",
+      "cwd": "/workspace/tscircuit-autorouter",
+      "title": "tscircuit-autorouter",
+      "startedAt": "2026-05-25T11:42:19.792Z",
+      "modifiedAt": "2026-05-25T11:42:19.792Z",
+      "size": 1049281,
+      "changeStats": {
+        "additions": 490,
+        "deletions": 260,
+        "files": 43
+      }
+    },
+    {
+      "path": "rectdiff.jsonl",
+      "filename": "rectdiff.jsonl",
+      "id": "019abaa5-832e-7540-8c2c-8f7b595d11bb",
+      "cwd": "/workspace/rectdiff",
+      "title": "rectdiff",
+      "startedAt": "2025-11-25T10:53:20.558Z",
+      "modifiedAt": "2025-11-25T10:53:20.558Z",
+      "size": 7710050,
+      "changeStats": {
+        "additions": 5226,
+        "deletions": 2316,
+        "files": 42
+      }
+    },
+    {
+      "path": "rectdiff-v2.jsonl",
+      "filename": "rectdiff-v2.jsonl",
+      "id": "019e13ad-87c2-7932-a2e9-2fbe6cc783e0",
+      "cwd": "/workspace/rectdiff-v2",
+      "title": "rectdiff-v2",
+      "startedAt": "2026-05-10T20:56:40.130Z",
+      "modifiedAt": "2026-05-10T20:56:40.130Z",
+      "size": 686077,
+      "changeStats": {
+        "additions": 2350,
+        "deletions": 93,
+        "files": 42
+      }
+    },
+    {
+      "path": "tiny-hypergraph.jsonl",
+      "filename": "tiny-hypergraph.jsonl",
+      "id": "019f0a8c-be80-71a2-a0fe-dd113d759883",
+      "cwd": "/workspace/tiny-hypergraph",
+      "title": "tiny-hypergraph",
+      "startedAt": "2026-06-27T19:27:03.811Z",
+      "modifiedAt": "2026-06-27T19:27:03.811Z",
+      "size": 3792656,
+      "changeStats": {
+        "additions": 3298,
+        "deletions": 797,
+        "files": 41
+      }
+    }
+  ]
+}

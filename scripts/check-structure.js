@@ -21,6 +21,9 @@ const GENERATED_FILES = new Set([
   "pnpm-lock.yaml",
   "yarn.lock",
 ]);
+const GENERATED_DIRECTORIES = new Set([
+  path.join("public", "sessions"),
+]);
 
 const failures = [];
 
@@ -46,6 +49,7 @@ async function checkTextFile(filePath) {
 }
 
 async function visit(directory) {
+  if (GENERATED_DIRECTORIES.has(relative(directory))) return;
   const entries = await readdir(directory, { withFileTypes: true });
   const files = entries.filter(
     (entry) => entry.isFile() && !GENERATED_FILES.has(entry.name),

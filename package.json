@@ -18,7 +18,9 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.18.1",
-    "vite": "^6.1.0"
+    "tree-sitter-wasms": "^0.1.13",
+    "vite": "^6.1.0",
+    "web-tree-sitter": "^0.20.8"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
