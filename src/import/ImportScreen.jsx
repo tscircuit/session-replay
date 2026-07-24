@@ -3,7 +3,6 @@ import {
   ArrowUpDown,
   ChevronDown,
   ChevronRight,
-  Github,
   HardDrive,
   Import,
   Info,
@@ -12,14 +11,12 @@ import {
   Play,
   RefreshCw,
   Search,
-  Sparkles,
   Upload,
   X,
 } from "lucide-react";
 import { buildReplay, parseSessionText } from "../replay";
 import { useSearchParamState } from "../routing/useSearchParamState";
 import { SAMPLE_SESSION } from "../sample";
-import { Mark } from "../ui/Mark";
 import { loadSessionCatalog, sessionContentUrl } from "./sessionCatalog";
 
 function Button({ className = "", children, ...props }) {
@@ -146,27 +143,7 @@ export function ImportScreen({ onLoad, error, setError }) {
 
   return (
     <main className="import-page">
-      <nav className="import-nav">
-        <div className="brand">
-          <Mark />
-          <span>Codex Replay</span>
-          <span className="beta">BETA</span>
-        </div>
-        <a href="https://github.com/openai/codex" target="_blank" rel="noreferrer">
-          <Github size={17} />
-          Codex
-        </a>
-      </nav>
       <section className="import-content">
-        <div className="eyebrow">
-          <Sparkles size={14} />
-          Session playback for Codex
-        </div>
-        <h1>See the work,<br />not just the result.</h1>
-        <p className="lede">
-          Turn a Codex session file into a precise timeline of the conversation,
-          tool calls, and every file state along the way.
-        </p>
         <div className="session-sources">
           <section className="local-sessions" aria-labelledby="session-replays-title">
           <header className="local-sessions-header">
@@ -327,12 +304,7 @@ export function ImportScreen({ onLoad, error, setError }) {
             <button onClick={() => setError("")} aria-label="Dismiss error"><X size={14} /></button>
           </div>
         )}
-        <div className="privacy-note">
-          <div><span className="privacy-dot" /><strong>Private by design</strong></div>
-          <p>Files you upload never leave this device.</p>
-        </div>
       </section>
-      <div className="import-grid" aria-hidden="true" />
     </main>
   );
 }

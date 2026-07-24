@@ -7,7 +7,7 @@ import { listSessions } from "../sessions";
 const temporaryDirectories = [];
 
 async function temporaryDirectory() {
-  const directory = await mkdtemp(path.join(os.tmpdir(), "codex-replay-"));
+  const directory = await mkdtemp(path.join(os.tmpdir(), "llm-replay-"));
   temporaryDirectories.push(directory);
   return directory;
 }

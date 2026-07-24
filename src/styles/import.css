@@ -86,77 +86,21 @@
 .import-page {
   height: 100%;
   min-height: 100%;
-  background:
-    radial-gradient(circle at 67% 44%, rgba(16,163,127,.075), transparent 30%),
-    var(--bg);
+  background: var(--bg);
   position: relative;
+  display: flex;
   overflow-x: hidden;
   overflow-y: auto;
 }
-.import-nav {
-  height: 70px;
-  padding: 0 34px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid rgba(255,255,255,.06);
-  position: relative;
-  z-index: 2;
-}
-.brand { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: -.02em; }
-.beta {
-  margin-left: 2px;
-  color: var(--muted);
-  border: 1px solid #3a3a3a;
-  border-radius: 5px;
-  padding: 2px 5px;
-  font-size: 9px;
-  letter-spacing: .08em;
-}
-.import-nav a {
-  color: #bdbdbd;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-}
-.import-nav a:hover { color: white; }
 .import-content {
   position: relative;
   z-index: 1;
   width: min(1120px, calc(100% - 40px));
-  margin: clamp(42px, 7vh, 74px) auto 54px;
+  margin: auto;
+  padding: 24px 0;
   text-align: center;
 }
-.eyebrow {
-  color: #b6ded4;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 12px;
-  font-weight: 600;
-  border: 1px solid rgba(44,195,158,.22);
-  background: rgba(16,163,127,.08);
-  border-radius: 999px;
-  padding: 7px 11px;
-}
-.import-content h1 {
-  margin: 23px 0 16px;
-  font-size: clamp(44px, 6vw, 67px);
-  line-height: .99;
-  letter-spacing: -.058em;
-  font-weight: 600;
-}
-.lede {
-  width: min(510px, 100%);
-  margin: 0 auto;
-  color: #aaa;
-  font-size: 16px;
-  line-height: 1.6;
-}
 .session-sources {
-  margin-top: 34px;
   display: grid;
   grid-template-columns: minmax(390px, 1.35fr) 34px minmax(280px, .85fr);
   align-items: stretch;
@@ -417,7 +361,6 @@
   font-size: 12px;
 }
 .import-error button { border: 0; background: none; cursor: pointer; display: flex; color: inherit; padding: 0; }
-.privacy-note { margin: 21px auto 0; color: #777; font-size: 11px; }
 .route-state {
   min-height: 100vh;
   display: flex;
@@ -432,15 +375,3 @@
 }
 .route-state strong { color: #ddd; font-size: 15px; }
 .route-state p { max-width: 420px; margin: 0; font-size: 11px; line-height: 1.6; }
-.privacy-note div { display: flex; align-items: center; justify-content: center; gap: 7px; color: #9b9b9b; }
-.privacy-note p { margin: 5px 0 0; }
-.privacy-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-bright); box-shadow: 0 0 0 4px rgba(25,197,156,.08); }
-.import-grid {
-  position: absolute;
-  inset: 45% 0 0;
-  opacity: .1;
-  background-image: linear-gradient(#777 1px, transparent 1px), linear-gradient(90deg, #777 1px, transparent 1px);
-  background-size: 48px 48px;
-  mask-image: linear-gradient(to bottom, transparent, black 50%);
-  pointer-events: none;
-}

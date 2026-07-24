@@ -63,7 +63,7 @@ function normalizeRecord(record, index) {
       kind: "meta",
       timestamp,
       data: payload,
-      title: payload?.cwd ? payload.cwd.split("/").filter(Boolean).at(-1) : "Codex session",
+      title: payload?.cwd ? payload.cwd.split("/").filter(Boolean).at(-1) : "LLM session",
       index,
     };
   }

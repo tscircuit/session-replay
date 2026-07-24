@@ -298,8 +298,6 @@ body.is-resizing { cursor: grabbing; user-select: none; }
 
 @media (max-width: 760px) {
   body { overflow: hidden; }
-  .import-nav { padding: 0 18px; }
-  .import-content { margin-top: 45px; }
   .session-sources { grid-template-columns: minmax(0, 1fr); }
   .import-divider { height: 45px; flex-direction: row; }
   .import-divider::before, .import-divider::after { width: auto; height: 1px; }
@@ -360,18 +358,9 @@ body.is-resizing { cursor: grabbing; user-select: none; }
 }
 
 @media (max-width: 480px) {
-  .import-nav { height: 60px; }
-  .import-nav a { font-size: 0; }
   .import-content {
     width: min(100% - 28px, 620px);
-    margin-top: 32px;
   }
-  .import-content h1 {
-    margin-top: 18px;
-    font-size: 39px;
-  }
-  .lede { font-size: 14px; }
-  .local-sessions { margin-top: 27px; }
   .session-row {
     grid-template-columns: 32px minmax(0, 1fr) 16px;
     padding-inline: 12px;

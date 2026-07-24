@@ -6,10 +6,11 @@ import readline from "node:readline";
 import { fileChangesFromRecord } from "../src/replay.js";
 
 const SESSION_LIMIT = 75;
+let activeSessionRoot = "";
 
-export function sessionRoot() {
-  const codexHome = process.env.CODEX_HOME || path.join(os.homedir(), ".codex");
-  return path.join(codexHome, "sessions");
+export function sessionRoot(homeDirectory = os.homedir()) {
+  const llmHome = process.env.LLM_HOME || path.join(homeDirectory, ".llm");
+  return path.join(llmHome, "sessions");
 }
 
 async function collectSessionFiles(directory, files = []) {
@@ -31,6 +32,41 @@ async function collectSessionFiles(directory, files = []) {
     }
   }));
   return files;
+}
+
+function newestFileTime(files) {
+  return files.reduce(
+    (newest, file) => Math.max(newest, file.modifiedAt.getTime()),
+    0,
+  );
+}
+
+async function discoverSessionCollection(homeDirectory) {
+  const preferredRoot = sessionRoot(homeDirectory);
+  const preferredFiles = await collectSessionFiles(preferredRoot);
+  if (preferredFiles.length || process.env.LLM_HOME) {
+    return { root: preferredRoot, files: preferredFiles };
+  }
+
+  let homeEntries = [];
+  try {
+    homeEntries = await readdir(homeDirectory, { withFileTypes: true });
+  } catch {
+    return { root: preferredRoot, files: [] };
+  }
+
+  const collections = await Promise.all(
+    homeEntries
+      .filter((entry) => entry.isDirectory() && entry.name.startsWith("."))
+      .map(async (entry) => {
+        const root = path.join(homeDirectory, entry.name, "sessions");
+        return { root, files: await collectSessionFiles(root) };
+      }),
+  );
+  return collections
+    .filter((collection) => collection.files.length)
+    .sort((a, b) => newestFileTime(b.files) - newestFileTime(a.files))[0]
+    || { root: preferredRoot, files: [] };
 }
 
 async function readSessionOverview(filePath) {
@@ -74,7 +110,7 @@ function sessionMetadata(file, root, overview) {
     filename: path.basename(file.path),
     id: payload.id || payload.session_id || "",
     cwd,
-    title: path.basename(cwd) || "Codex session",
+    title: path.basename(cwd) || "LLM session",
     startedAt: payload.timestamp || record?.timestamp || file.modifiedAt.toISOString(),
     modifiedAt: file.modifiedAt.toISOString(),
     size: file.size,
@@ -83,16 +119,21 @@ function sessionMetadata(file, root, overview) {
 }
 
 export async function listSessions({
-  root = sessionRoot(),
+  root,
+  homeDirectory = os.homedir(),
   currentWorkspace = process.cwd(),
   limit = SESSION_LIMIT,
 } = {}) {
-  const files = await collectSessionFiles(root);
+  const collection = root
+    ? { root, files: await collectSessionFiles(root) }
+    : await discoverSessionCollection(homeDirectory);
+  const resolvedRoot = collection.root;
+  const files = collection.files;
   files.sort((a, b) => b.modifiedAt.getTime() - a.modifiedAt.getTime());
 
   const sessions = await Promise.all(
     files.slice(0, limit).map(async (file) =>
-      sessionMetadata(file, root, await readSessionOverview(file.path))),
+      sessionMetadata(file, resolvedRoot, await readSessionOverview(file.path))),
   );
   const normalizedWorkspace = path.resolve(currentWorkspace);
   const currentIndex = sessions.findIndex(
@@ -105,10 +146,12 @@ export async function listSessions({
     sessions.unshift(current);
   }
 
+  if (!root) activeSessionRoot = resolvedRoot;
   return sessions;
 }
 
-export async function readSession(relativePath, { root = sessionRoot() } = {}) {
+export async function readSession(relativePath, { root } = {}) {
+  root ||= activeSessionRoot || (await discoverSessionCollection(os.homedir())).root;
   if (!relativePath || path.isAbsolute(relativePath) || !relativePath.endsWith(".jsonl")) {
     const error = new Error("Invalid session path.");
     error.statusCode = 400;
@@ -173,7 +216,7 @@ export function localSessionsPlugin() {
   };
 
   return {
-    name: "codex-local-sessions",
+    name: "llm-local-sessions",
     configureServer(server) {
       server.middlewares.use(middleware);
     },
