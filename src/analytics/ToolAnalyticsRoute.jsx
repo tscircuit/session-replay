@@ -41,14 +41,12 @@ function DetailMetric({ icon: Icon, label, value, note }) {
 
 function MiniRanking({ items, empty }) {
   if (!items.length) return <p className="tool-detail-empty">{empty}</p>;
-  const maximum = items[0].count;
   return (
     <div className="tool-mini-ranking">
       {items.map((item) => (
         <div key={item.label}>
           <span title={item.label}>{item.label}</span>
           <b>{item.count}×</b>
-          <i><em style={{ width: `${Math.max(5, (item.count / maximum) * 100)}%` }} /></i>
         </div>
       ))}
     </div>
