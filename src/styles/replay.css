@@ -104,10 +104,14 @@
 .editor { min-width: 0; min-height: 0; overflow: hidden; display: grid; grid-template-rows: 45px 31px minmax(0,1fr); }
 .replay-body.files-is-collapsed .editor { border-right: 1px solid var(--border); }
 .editor-header { display: flex; align-items: stretch; min-width: 0; border-bottom: 1px solid var(--border-soft); background: #141414; }
-.editor-tabs { min-width: 0; flex: 1; display: flex; align-items: stretch; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; scrollbar-color: #424242 #141414; scroll-behavior: smooth; }
-.editor-tabs::-webkit-scrollbar { height: 5px; }
-.editor-tabs::-webkit-scrollbar-track { background: #141414; }
-.editor-tabs::-webkit-scrollbar-thumb { border-radius: 999px; background: #424242; }
+.editor-tabs { min-width: 0; flex: 1; display: flex; align-items: stretch; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; scrollbar-color: transparent transparent; scroll-behavior: smooth; }
+.editor-tabs:hover, .editor-tabs:focus-within { scrollbar-width: thin; scrollbar-color: #424242 #141414; }
+.editor-tabs::-webkit-scrollbar { height: 0; }
+.editor-tabs:hover::-webkit-scrollbar, .editor-tabs:focus-within::-webkit-scrollbar { height: 5px; }
+.editor-tabs::-webkit-scrollbar-track { background: transparent; }
+.editor-tabs::-webkit-scrollbar-thumb { border-radius: 999px; background: transparent; }
+.editor-tabs:hover::-webkit-scrollbar-track, .editor-tabs:focus-within::-webkit-scrollbar-track { background: #141414; }
+.editor-tabs:hover::-webkit-scrollbar-thumb, .editor-tabs:focus-within::-webkit-scrollbar-thumb { background: #424242; }
 .editor-tabs::-webkit-scrollbar-thumb:hover { background: #5a5a5a; }
 .tab { height: 100%; min-width: 150px; max-width: 240px; flex: 0 0 auto; padding: 0 13px; display: flex; align-items: center; gap: 7px; border: 0; border-right: 1px solid var(--border); background: #171717; color: #8b8b8b; font: inherit; font-size: 11px; cursor: pointer; }
 .tab:hover:not(:disabled) { background: #1c1c1c; color: #c7c7c7; }
