@@ -26,5 +26,7 @@ describe("session replay parser", () => {
     const files = buildReplay(records).frames.at(-1).files;
     expect(files["old.txt"].deleted).toBe(true);
     expect(files["new.txt"].content).toBe("after");
+    expect(files["new.txt"].status).toBe("added");
+    expect(files["new.txt"].approximate).toBe(false);
   });
 });

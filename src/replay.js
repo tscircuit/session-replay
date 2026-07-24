@@ -206,7 +206,12 @@ function findSubsequence(haystack, needle) {
   return -1;
 }
 
-function applyFilePatch(previous = "", change) {
+function applyFilePatch(
+  previous = "",
+  change,
+  previousKnown = Boolean(previous),
+  previousApproximate = !previousKnown,
+) {
   if (change.action === "delete") return { content: "", deleted: true, approximate: false };
   const bodyLines = change.body.split(/\r?\n/);
   if (change.action === "add") {
@@ -241,11 +246,11 @@ function applyFilePatch(previous = "", change) {
       .filter((line) => line.startsWith("+") || line.startsWith(" "))
       .map((line) => line.slice(1))
       .join("\n");
-    return { content: reconstructed || previous, deleted: false, approximate: !previous };
+    return { content: reconstructed || previous, deleted: false, approximate: previousApproximate };
   }
 
   let result = [...original];
-  let approximate = !previous;
+  let approximate = previousApproximate;
   for (const hunk of hunks) {
     const position =
       hunk.old.length > 0
@@ -253,7 +258,7 @@ function applyFilePatch(previous = "", change) {
         : Math.max(0, Math.min(result.length, hunk.newStart - 1));
     if (position >= 0) {
       result.splice(position, hunk.old.length, ...hunk.next);
-    } else if (!previous) {
+    } else if (!previousKnown) {
       result.push(...hunk.next);
     } else {
       approximate = true;
@@ -334,8 +339,14 @@ export function buildReplay(records, filename = "session.jsonl") {
       if (changes.length) {
         changes.forEach((change) => {
           const priorPath = change.sourcePath || change.path;
-          const prior = files[priorPath]?.content || "";
-          const applied = applyFilePatch(prior, change);
+          const priorFile = files[priorPath];
+          const prior = priorFile?.content || "";
+          const applied = applyFilePatch(
+            prior,
+            change,
+            Boolean(priorFile),
+            priorFile?.approximate ?? !priorFile,
+          );
           if (change.sourcePath && change.sourcePath !== change.path) {
             files[change.sourcePath] = {
               ...(files[change.sourcePath] || { path: change.sourcePath }),
@@ -352,7 +363,8 @@ export function buildReplay(records, filename = "session.jsonl") {
             path: change.path,
             content: applied.content,
             status:
-              change.action === "add" || change.sourcePath
+              change.action === "add" ||
+              (change.sourcePath && priorFile?.status === "added")
                 ? "added"
                 : change.action === "delete"
                   ? "deleted"
