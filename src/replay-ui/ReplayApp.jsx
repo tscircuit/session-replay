@@ -8,6 +8,7 @@ import {
   MessageSquareText,
 } from "lucide-react";
 import { formatTime, timeDistance } from "../replay";
+import { useSearchParamState } from "../routing/useSearchParamState";
 import { Mark } from "../ui/Mark";
 import { clamp, ResizeHandle } from "../ui/ResizeHandle";
 import { ChatPanel, Workspace } from "./ReplayPanels";
@@ -31,13 +32,32 @@ export function ReplayApp({ replay, onClose }) {
   const rootRef = useRef(null);
   const isNarrow = useMediaQuery("(max-width: 760px)");
   const defaultMobileChatHeight = Math.max(150, Math.round((window.innerHeight - 150) * 0.42));
-  const [index, setIndex] = useState(0);
+  const [eventParam, setEventParam] = useSearchParamState("event", "0");
+  const parsedIndex = Number.parseInt(eventParam, 10);
+  const index = clamp(Number.isFinite(parsedIndex) ? parsedIndex : 0, 0, replay.frames.length - 1);
+  const setIndex = useCallback((nextIndex) => {
+    setEventParam((current) => {
+      const parsedCurrent = Number.parseInt(current, 10);
+      const currentIndex = clamp(
+        Number.isFinite(parsedCurrent) ? parsedCurrent : 0,
+        0,
+        replay.frames.length - 1,
+      );
+      const resolved = typeof nextIndex === "function" ? nextIndex(currentIndex) : nextIndex;
+      return String(clamp(resolved, 0, replay.frames.length - 1));
+    });
+  }, [replay.frames.length, setEventParam]);
   const [playing, setPlaying] = useState(false);
-  const [speed, setSpeed] = useState(1);
-  const [selectedFile, setSelectedFile] = useState("");
-  const [chatCollapsed, setChatCollapsed] = useState(false);
-  const [filesCollapsed, setFilesCollapsed] = useState(false);
-  const [showInfo, setShowInfo] = useState(false);
+  const [speedParam, setSpeedParam] = useSearchParamState("speed", "1");
+  const speed = [0.5, 1, 1.5, 2].includes(Number(speedParam)) ? Number(speedParam) : 1;
+  const setSpeed = useCallback((value) => setSpeedParam(String(value)), [setSpeedParam]);
+  const [selectedFile, setSelectedFile] = useSearchParamState("file");
+  const [chatParam, setChatParam] = useSearchParamState("chat");
+  const [filesParam, setFilesParam] = useSearchParamState("files");
+  const [infoParam, setInfoParam] = useSearchParamState("info");
+  const chatCollapsed = chatParam === "closed";
+  const filesCollapsed = filesParam === "closed";
+  const showInfo = infoParam === "1";
   const [chatWidth, setChatWidth] = useState(() => clamp(window.innerWidth * 0.35, 310, 520));
   const [mobileChatHeight, setMobileChatHeight] = useState(defaultMobileChatHeight);
   const [filesWidth, setFilesWidth] = useState(215);
@@ -62,7 +82,7 @@ export function ReplayApp({ replay, onClose }) {
   const togglePlaying = useCallback(() => {
     if (!playing && index >= replay.frames.length - 1) setIndex(0);
     setPlaying((value) => !value);
-  }, [index, playing, replay.frames.length]);
+  }, [index, playing, replay.frames.length, setIndex]);
 
   useEffect(() => {
     if (!playing) return undefined;
@@ -72,12 +92,12 @@ export function ReplayApp({ replay, onClose }) {
     }
     const timer = window.setTimeout(() => setIndex((value) => value + 1), 1100 / speed);
     return () => window.clearTimeout(timer);
-  }, [playing, index, speed, replay.frames.length]);
+  }, [playing, index, speed, replay.frames.length, setIndex]);
 
   useEffect(() => {
     const handler = (event) => {
       if (event.key === "Escape") {
-        setShowInfo(false);
+        setInfoParam("");
         return;
       }
       const target = event.target instanceof Element ? event.target : null;
@@ -100,7 +120,7 @@ export function ReplayApp({ replay, onClose }) {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [replay.frames.length, togglePlaying]);
+  }, [replay.frames.length, setIndex, setInfoParam, togglePlaying]);
 
   useEffect(() => {
     const fitPanels = () => {
@@ -148,7 +168,7 @@ export function ReplayApp({ replay, onClose }) {
         </div>
         <div className="topbar-actions">
           <button
-            onClick={() => setShowInfo((value) => !value)}
+            onClick={() => setInfoParam(showInfo ? "" : "1")}
             className={showInfo ? "active" : ""}
             aria-label="Session details"
             aria-expanded={showInfo}
@@ -175,7 +195,7 @@ export function ReplayApp({ replay, onClose }) {
           startedAt={replay.frames[0]?.timestamp}
           allActivities={replay.stats.toolCalls}
           collapsed={chatCollapsed}
-          onToggle={() => setChatCollapsed(!chatCollapsed)}
+          onToggle={() => setChatParam(chatCollapsed ? "" : "closed")}
         />
         <ResizeHandle
           className="chat-resizer"
@@ -194,7 +214,7 @@ export function ReplayApp({ replay, onClose }) {
           selectedFile={selectedFile}
           setSelectedFile={setSelectedFile}
           collapsed={filesCollapsed}
-          onToggle={() => setFilesCollapsed(!filesCollapsed)}
+          onToggle={() => setFilesParam(filesCollapsed ? "" : "closed")}
           filesWidth={filesWidth}
           setFilesWidth={setFilesWidth}
           getFilesMax={getFilesMax}

@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { buildReplay, parseSessionText } from "../replay";
+import { useSearchParamState } from "../routing/useSearchParamState";
 import { SAMPLE_SESSION } from "../sample";
 import { Mark } from "../ui/Mark";
 
@@ -49,8 +50,8 @@ export function ImportScreen({ onLoad, error, setError }) {
   const inputRef = useRef(null);
   const [dragging, setDragging] = useState(false);
   const [sessions, setSessions] = useState([]);
-  const [sessionQuery, setSessionQuery] = useState("");
-  const [sessionSort, setSessionSort] = useState("recent");
+  const [sessionQuery, setSessionQuery] = useSearchParamState("q");
+  const [sessionSort, setSessionSort] = useSearchParamState("sort", "recent");
   const [sessionStatus, setSessionStatus] = useState("loading");
   const [openingPath, setOpeningPath] = useState("");
 
@@ -60,7 +61,7 @@ export function ImportScreen({ onLoad, error, setError }) {
       setError("");
       try {
         const raw = await file.text();
-        onLoad(buildReplay(parseSessionText(raw), file.name));
+        onLoad(buildReplay(parseSessionText(raw), file.name), { upload: "1" });
       } catch (reason) {
         setError(reason instanceof Error ? reason.message : "Could not read that session.");
       }
@@ -99,7 +100,10 @@ export function ImportScreen({ onLoad, error, setError }) {
         throw new Error(result.error || "Could not open that session.");
       }
       const raw = await response.text();
-      onLoad(buildReplay(parseSessionText(raw), session.filename));
+      onLoad(
+        buildReplay(parseSessionText(raw), session.filename),
+        { session: session.path },
+      );
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not open that session.");
     } finally {
@@ -300,7 +304,10 @@ export function ImportScreen({ onLoad, error, setError }) {
               <Button className="primary" onClick={() => inputRef.current?.click()}>
                 <Import size={16} /> Choose file
               </Button>
-              <Button onClick={() => onLoad(buildReplay(SAMPLE_SESSION, "demo-session.jsonl"))}>
+              <Button onClick={() => onLoad(
+                buildReplay(SAMPLE_SESSION, "demo-session.jsonl"),
+                { demo: "1" },
+              )}>
                 <Play size={15} fill="currentColor" /> Explore demo
               </Button>
             </div>

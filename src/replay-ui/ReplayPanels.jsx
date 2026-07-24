@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { Mark } from "../ui/Mark";
 import { ResizeHandle } from "../ui/ResizeHandle";
+import { useSearchParamState } from "../routing/useSearchParamState";
 
 function formatElapsedTimestamp(start, value) {
   const from = new Date(start).getTime();
@@ -215,7 +216,7 @@ export function Workspace({
   setFilesWidth,
   getFilesMax,
 }) {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useSearchParamState("filter");
   const [openFiles, setOpenFiles] = useState([]);
   const tabsRef = useRef(null);
   const files = frame.files;
