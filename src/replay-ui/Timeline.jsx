@@ -1,11 +1,67 @@
 import React, { useEffect, useRef } from "react";
-import { Pause, Play, RotateCcw } from "lucide-react";
+import {
+  Bot,
+  FilePenLine,
+  MessageSquareText,
+  Pause,
+  Play,
+  RotateCcw,
+  Terminal,
+} from "lucide-react";
 import { formatTime, timeDistance } from "../replay";
 import { ResizeHandle } from "../ui/ResizeHandle";
 
 const speedOptions = [0.5, 1, 1.5, 2];
 const timelineEventGap = 18;
 const timelineEdgePadding = 24;
+
+function compactText(value, limit = 72) {
+  const text = String(value || "").replace(/\s+/g, " ").trim();
+  return text.length > limit ? `${text.slice(0, limit - 1)}…` : text;
+}
+
+function displayToolName(name) {
+  return String(name || "tool").replaceAll("_", " ");
+}
+
+export function describeTimelineFrame(frame, eventNumber) {
+  const event = frame?.event;
+  if (event?.kind === "message") {
+    const user = event.role === "user";
+    return {
+      kind: `timeline-message timeline-${user ? "user" : "assistant"}`,
+      label: user ? "User message" : "Assistant response",
+      detail: compactText(event.text),
+      title: `Event ${eventNumber} · ${user ? "User message" : "Assistant response"} · ${compactText(event.text, 110)}`,
+      icon: user ? MessageSquareText : Bot,
+    };
+  }
+  if (event?.kind === "tool") {
+    const activity = frame.activities.at(-1);
+    const changedFiles = activity?.files || [];
+    const fileStates = changedFiles.map((path) => frame.files[path]).filter(Boolean);
+    const additions = fileStates.reduce((total, file) => total + file.additions, 0);
+    const deletions = fileStates.reduce((total, file) => total + file.deletions, 0);
+    const fileNames = changedFiles.map((path) => path.split("/").at(-1)).join(", ");
+    const fileDetail = changedFiles.length
+      ? `${changedFiles.length} file${changedFiles.length === 1 ? "" : "s"} · +${additions} −${deletions} · ${fileNames}`
+      : compactText(activity?.label || displayToolName(event.name));
+    return {
+      kind: `timeline-tool ${changedFiles.length ? "timeline-file-change" : ""}`.trim(),
+      label: displayToolName(event.name),
+      detail: compactText(fileDetail),
+      title: `Event ${eventNumber} · ${displayToolName(event.name)} · ${compactText(fileDetail, 110)}`,
+      icon: changedFiles.length ? FilePenLine : Terminal,
+    };
+  }
+  return {
+    kind: "timeline-event",
+    label: "Session event",
+    detail: "",
+    title: `Event ${eventNumber}`,
+    icon: MessageSquareText,
+  };
+}
 
 export function Timeline({
   replay,
@@ -25,6 +81,8 @@ export function Timeline({
   const start = frames[0]?.timestamp;
   const end = frames.at(-1)?.timestamp;
   const trackMinWidth = Math.max(0, (frames.length - 1) * timelineEventGap + 10);
+  const activeSummary = describeTimelineFrame(frames[index], index + 1);
+  const ActiveIcon = activeSummary.icon;
 
   useEffect(() => {
     const viewport = viewportRef.current;
@@ -94,6 +152,11 @@ export function Timeline({
       <div className="track-wrap">
         <div className="time-row">
           <span>{formatTime(frames[index]?.timestamp, `Event ${index + 1}`)}</span>
+          <span className={`event-summary ${activeSummary.kind}`}>
+            <ActiveIcon size={12} />
+            <strong>{activeSummary.label}</strong>
+            {activeSummary.detail && <em>{activeSummary.detail}</em>}
+          </span>
           <span>{timeDistance(start, frames[index]?.timestamp)} / {timeDistance(start, end)}</span>
         </div>
         <div className="range-viewport" ref={viewportRef}>
@@ -113,17 +176,20 @@ export function Timeline({
               }}
             />
             <div className="ticks">
-              {frames.map((frame, tick) => (
-                <button
-                  key={frame.id}
-                  className={`${tick <= index ? "passed" : ""} ${frame.event?.kind}`}
-                  style={{ left: `${frames.length <= 1 ? 0 : (tick / (frames.length - 1)) * 100}%` }}
-                  onClick={() => { setPlaying(false); setIndex(tick); }}
-                  title={`${frame.event?.kind || "event"} · ${formatTime(frame.timestamp)}`}
-                  aria-label={`Go to event ${tick + 1}: ${frame.event?.kind || "event"}`}
-                  tabIndex={-1}
-                />
-              ))}
+              {frames.map((frame, tick) => {
+                const summary = describeTimelineFrame(frame, tick + 1);
+                return (
+                  <button
+                    key={frame.id}
+                    className={`${tick <= index ? "passed" : ""} ${tick === index ? "active" : ""} ${summary.kind}`}
+                    style={{ left: `${frames.length <= 1 ? 0 : (tick / (frames.length - 1)) * 100}%` }}
+                    onClick={() => { setPlaying(false); setIndex(tick); }}
+                    title={`${summary.title} · ${formatTime(frame.timestamp)}`}
+                    aria-label={`Go to ${summary.title}`}
+                    tabIndex={-1}
+                  />
+                );
+              })}
             </div>
           </div>
         </div>
