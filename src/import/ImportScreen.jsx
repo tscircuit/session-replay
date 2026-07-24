@@ -105,7 +105,10 @@ export function ImportScreen({ onLoad, error, setError }) {
       const raw = await response.text();
       onLoad(
         buildReplay(parseSessionText(raw), session.filename),
-        { session: session.path },
+        {
+          session: session.path,
+          ...(session.origin === "bundled" ? { bundled: "1" } : {}),
+        },
       );
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not open that session.");

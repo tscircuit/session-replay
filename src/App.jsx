@@ -4,7 +4,9 @@ import { ImportScreen } from "./import/ImportScreen";
 import { ReplayRoute } from "./routing/ReplayRoute";
 
 function replaySourceKey(source) {
-  if (source.session) return `session:${source.session}`;
+  if (source.session) {
+    return `${source.bundled ? "bundled" : "session"}:${source.session}`;
+  }
   if (source.demo) return "demo";
   return "upload";
 }

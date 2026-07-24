@@ -4,12 +4,20 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { buildReplay, parseSessionText } from "../replay";
 import { ReplayApp } from "../replay-ui/ReplayApp";
 import { SAMPLE_SESSION } from "../sample";
+import { sessionContentUrl } from "../import/sessionCatalog";
 
 const demoReplay = buildReplay(SAMPLE_SESSION, "demo-session.jsonl");
 
 function sourceFromParams(params) {
   const session = params.get("session");
-  if (session) return { key: `session:${session}`, session };
+  if (session) {
+    const bundled = params.get("bundled") === "1";
+    return {
+      key: `${bundled ? "bundled" : "session"}:${session}`,
+      session,
+      bundled,
+    };
+  }
   if (params.get("demo") === "1") return { key: "demo", demo: true };
   return { key: "upload", upload: true };
 }
@@ -47,7 +55,10 @@ export function ReplayRoute({ transientReplay }) {
     if (immediateReplay || !source.session) return undefined;
     const controller = new AbortController();
     setRemote({ key: source.key, replay: null, error: "" });
-    fetch(`/api/session?path=${encodeURIComponent(source.session)}`, {
+    fetch(sessionContentUrl({
+      path: source.session,
+      origin: source.bundled ? "bundled" : "local",
+    }), {
       signal: controller.signal,
     })
       .then(async (response) => {
@@ -65,7 +76,7 @@ export function ReplayRoute({ transientReplay }) {
         }
       });
     return () => controller.abort();
-  }, [immediateReplay, source.key, source.session]);
+  }, [immediateReplay, source.bundled, source.key, source.session]);
 
   const remoteReplay = remote.key === source.key ? remote.replay : null;
   const replay = immediateReplay || remoteReplay;
