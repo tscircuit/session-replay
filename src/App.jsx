@@ -340,18 +340,30 @@ function Message({ message, startedAt }) {
 }
 
 function Activity({ activity }) {
-  const command = activity.name === "exec_command";
+  const command = /(?:^|_)(?:exec|shell|command)(?:_|$)/.test(activity.name);
+  const title = command
+    ? "Ran command"
+    : activity.files.length
+      ? "Changed files"
+      : activity.name.replaceAll("_", " ");
+  const details = command
+    ? [activity.label]
+    : activity.files.length
+      ? activity.files
+      : activity.label !== title
+        ? [activity.label]
+        : [];
+
   return (
     <div className="activity">
-      <div className="activity-rule" />
       <div className="activity-icon">{command ? <Terminal size={14} /> : <Code2 size={14} />}</div>
       <div className="activity-copy">
-        <span>{command ? "Ran command" : activity.label}</span>
-        {command
-          ? <code>{activity.label}</code>
-          : activity.files.map((file, index) => <code key={`${file}-${index}`}>{file}</code>)}
+        <div className="activity-heading">
+          <strong>{title}</strong>
+          <Check size={14} className="activity-check" />
+        </div>
+        {details.map((detail, index) => <code key={`${detail}-${index}`}>{detail}</code>)}
       </div>
-      <Check size={14} className="activity-check" />
     </div>
   );
 }

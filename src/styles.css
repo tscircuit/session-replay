@@ -494,12 +494,12 @@
 .message-meta time { font-size: 9px; color: #656565; font-variant-numeric: tabular-nums; }
 .message p { white-space: pre-wrap; margin: 0; font-size: 12px; line-height: 1.65; color: #d1d1d1; overflow-wrap: anywhere; }
 .user-message p { color: #dedede; }
-.activity { display: grid; grid-template-columns: 1fr 25px minmax(0, 1fr) 15px 1fr; align-items: center; column-gap: 7px; min-height: 46px; padding: 7px 17px; color: #858585; }
-.activity-rule { height: 1px; background: #292929; }
-.activity-icon { width: 25px; height: 25px; display: grid; place-items: center; border: 1px solid #333; border-radius: 7px; background: #1b1b1b; }
-.activity-copy { display: flex; align-items: flex-start; flex-direction: column; gap: 4px; min-width: 0; }
-.activity-copy > span { font-size: 9px; text-transform: uppercase; letter-spacing: .04em; }
-.activity-copy code { color: #aaa; background: #202020; border-radius: 4px; padding: 3px 5px; font: 9px DM Mono, monospace; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.activity { display: flex; align-items: flex-start; gap: 11px; min-height: 54px; padding: 13px 19px; border-bottom: 1px solid #202020; color: #858585; }
+.activity-icon { width: 27px; height: 27px; flex: 0 0 auto; display: grid; place-items: center; border: 1px solid #333; border-radius: 7px; background: #1b1b1b; }
+.activity-copy { display: flex; align-items: stretch; flex: 1; flex-direction: column; gap: 6px; min-width: 0; }
+.activity-heading { min-height: 27px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.activity-heading strong { color: #aaa; font-size: 10px; font-weight: 500; text-transform: capitalize; }
+.activity-copy code { display: block; width: 100%; color: #bbb; background: #191919; border: 1px solid #282828; border-radius: 6px; padding: 7px 9px; font: 10px/1.55 DM Mono, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
 .activity-check { color: var(--accent); }
 .chat-footer { border-top: 1px solid var(--border-soft); display: flex; justify-content: space-between; align-items: center; padding: 0 15px; color: #6f6f6f; font-size: 9px; }
 .chat-footer span { display: flex; align-items: center; gap: 5px; }
@@ -668,11 +668,7 @@
     writing-mode: horizontal-tb;
   }
   .message { padding: 14px 15px; }
-  .activity {
-    grid-template-columns: 25px minmax(0, 1fr) 15px;
-    padding-inline: 15px;
-  }
-  .activity-rule { display: none; }
+  .activity { padding-inline: 15px; }
 
   .workspace { grid-template-columns: minmax(0, 1fr) 43px; }
   .source-code { font-size: 10px; }

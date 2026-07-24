@@ -258,10 +258,18 @@ function cloneFiles(files) {
   return Object.fromEntries(Object.entries(files).map(([path, file]) => [path, { ...file }]));
 }
 
+function commandFromInput(input) {
+  const value = typeof input === "object"
+    ? input?.cmd ?? input?.command ?? input?.script ?? input?.input
+    : input;
+  if (Array.isArray(value)) return value.join(" ");
+  return value ? String(value) : "";
+}
+
 function summarizeTool(event) {
-  if (event.name === "exec_command") {
-    const command = typeof event.input === "object" ? event.input?.cmd : event.input;
-    return command ? String(command).split("\n")[0] : "Ran a command";
+  if (/(?:^|_)(?:exec|shell|command)(?:_|$)/.test(event.name)) {
+    const command = commandFromInput(event.input);
+    return command || "Command details unavailable";
   }
   if (PATCH_NAMES.has(event.name)) return "Applied a file patch";
   return event.name.replaceAll("_", " ");
