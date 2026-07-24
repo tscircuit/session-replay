@@ -39,7 +39,7 @@ function formatElapsedTimestamp(start, value) {
 function Message({ message, startedAt }) {
   const isUser = message.role === "user";
   const isAssistant = message.role === "assistant";
-  const author = isUser ? "You" : isAssistant ? "Codex" : "System";
+  const author = isUser ? "You" : isAssistant ? "LLM" : "System";
   return (
     <article className={`message ${isUser ? "user-message" : "assistant-message"}`}>
       <div className="avatar">{isUser ? <UserRound size={15} /> : isAssistant ? <Mark /> : <Bot size={15} />}</div>

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildReplay } from "../replay";
 
 describe("session replay parser", () => {
-  it("uses canonical Codex messages without response-item duplicates or injected roles", () => {
+  it("uses canonical LLM messages without response-item duplicates or injected roles", () => {
     const records = [
       { type: "response_item", payload: { type: "message", role: "developer", content: [{ text: "hidden" }] } },
       { type: "response_item", payload: { type: "message", role: "user", content: [{ text: "hello" }] } },

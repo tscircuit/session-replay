@@ -1,13 +1,13 @@
-# Codex Replay
+# LLM Replay
 
-A local-first timeline viewer for Codex session JSON and JSONL files.
+A local-first timeline viewer for LLM session JSON and JSONL files.
 
 ```bash
 npm install
 npm run dev
 ```
 
-The local server automatically finds recent sessions in `~/.codex/sessions`, marks
+The local server automatically finds recent sessions in `~/.llm/sessions`, marks
 the newest session for the current workspace, and makes the list searchable. You
 can also drop in a session export or use the built-in demo. The viewer parses chat
 messages, tool calls, and `apply_patch` events, then reconstructs the state of
