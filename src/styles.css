@@ -537,16 +537,14 @@
 .tree-root, .file-row { height: 28px; display: flex; align-items: center; gap: 6px; font-size: 10px; }
 .tree-root { color: #7c7c7c; padding: 0 5px; }
 .file-row { border: 0; background: none; width: 100%; border-radius: 5px; padding: 0 7px 0 26px; cursor: pointer; color: #a7a7a7; }
-.file-row:hover { background: #202020; color: #ddd; }
-.file-row.selected { background: #2a2a2a; color: #f0f0f0; }
+.file-row:hover { background: #202020; }
+.file-row.selected { background: #2a2a2a; }
+.file-row.added, .tab.added, .files-legend .added { color: #57b87a; }
+.file-row.modified, .tab.modified, .files-legend .modified { color: #d4a94e; }
+.file-row.deleted, .tab.deleted, .files-legend .deleted { color: #dc6f6f; }
 .file-row.deleted span { text-decoration: line-through; color: #777; }
 .file-row > span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
-.status-dot { width: 6px; height: 6px; flex: 0 0 auto; border-radius: 50%; display: inline-block; background: #777; }
-.status-dot.added { background: #57b87a; }
-.status-dot.modified { background: #d4a94e; }
-.status-dot.deleted { background: #dc6f6f; }
 .files-legend { border-top: 1px solid var(--border-soft); display: flex; align-items: center; justify-content: center; gap: 11px; color: #666; font-size: 8px; }
-.files-legend span { display: flex; align-items: center; gap: 4px; }
 
 .collapsed-panel { display: flex; flex-direction: column; align-items: center; gap: 14px; padding-top: 8px; border-right: 1px solid var(--border); background: #141414; color: #777; min-width: 0; overflow: hidden; }
 .collapsed-panel button { width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 6px; background: transparent; cursor: pointer; color: #aaa; }

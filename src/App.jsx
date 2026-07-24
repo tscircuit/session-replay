@@ -76,6 +76,17 @@ function formatFileSize(bytes) {
   return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
 }
 
+function formatElapsedTimestamp(start, value) {
+  const from = new Date(start).getTime();
+  const to = new Date(value).getTime();
+  if (!Number.isFinite(from) || !Number.isFinite(to)) return "00";
+  const totalSeconds = Math.max(0, Math.floor((to - from) / 1000));
+  if (totalSeconds < 60) return String(totalSeconds).padStart(2, "0");
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
 function ImportScreen({ onLoad, error, setError }) {
   const inputRef = useRef(null);
   const [dragging, setDragging] = useState(false);
@@ -310,7 +321,7 @@ function ImportScreen({ onLoad, error, setError }) {
   );
 }
 
-function Message({ message }) {
+function Message({ message, startedAt }) {
   const isUser = message.role === "user";
   const isAssistant = message.role === "assistant";
   const author = isUser ? "You" : isAssistant ? "Codex" : "System";
@@ -320,7 +331,7 @@ function Message({ message }) {
       <div className="message-body">
         <div className="message-meta">
           <strong>{author}</strong>
-          <time dateTime={message.timestamp || undefined}>{formatTime(message.timestamp, "")}</time>
+          <time>{formatElapsedTimestamp(startedAt, message.timestamp)}</time>
         </div>
         <p>{message.text}</p>
       </div>
@@ -345,7 +356,7 @@ function Activity({ activity }) {
   );
 }
 
-function ChatPanel({ frame, allActivities, collapsed, onToggle }) {
+function ChatPanel({ frame, startedAt, allActivities, collapsed, onToggle }) {
   const scrollRef = useRef(null);
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -385,7 +396,9 @@ function ChatPanel({ frame, allActivities, collapsed, onToggle }) {
       </header>
       <div className="chat-scroll" ref={scrollRef}>
         {feed.map((item) =>
-          item._kind === "message" ? <Message key={item.id} message={item} /> : <Activity key={item.id} activity={item} />,
+          item._kind === "message"
+            ? <Message key={item.id} message={item} startedAt={startedAt} />
+            : <Activity key={item.id} activity={item} />,
         )}
         {!feed.length && <div className="empty-panel">No conversation at this point.</div>}
       </div>
@@ -413,14 +426,13 @@ function FileTree({ files, selected, onSelect, query }) {
       {visible.map((file) => (
         <button
           key={file.path}
-          className={`file-row ${selected === file.path ? "selected" : ""} ${file.deleted ? "deleted" : ""}`}
+          className={`file-row ${file.status} ${selected === file.path ? "selected" : ""} ${file.deleted ? "deleted" : ""}`}
           onClick={() => onSelect(file.path)}
           aria-current={selected === file.path ? "true" : undefined}
           aria-label={`${file.path}, ${file.status}`}
         >
           <FileIcon path={file.path} status={file.status} />
           <span title={file.path}>{file.path.split("/").at(-1)}</span>
-          <i className={`status-dot ${file.status}`} />
         </button>
       ))}
     </div>
@@ -481,10 +493,9 @@ function Workspace({ frame, filePaths, selectedFile, setSelectedFile, collapsed,
     <section className="workspace">
       <div className="editor">
         <header className="editor-header">
-          <div className="tab">
+          <div className={`tab ${file?.status || ""}`}>
             <FileIcon path={file?.path} status={file?.status} />
             <span>{file?.path?.split("/").at(-1) || "File state"}</span>
-            {file && <i className={`status-dot ${file.status}`} />}
           </div>
           <div className="editor-actions">
             {file && (
@@ -529,9 +540,9 @@ function Workspace({ frame, filePaths, selectedFile, setSelectedFile, collapsed,
           </label>
           <FileTree files={files} selected={selectedFile} onSelect={setSelectedFile} query={query} />
           <footer className="files-legend">
-            <span><i className="status-dot added" /> Added</span>
-            <span><i className="status-dot modified" /> Modified</span>
-            <span><i className="status-dot deleted" /> Deleted</span>
+            <span className="added">Added</span>
+            <span className="modified">Modified</span>
+            <span className="deleted">Deleted</span>
           </footer>
         </aside>
       )}
@@ -705,6 +716,7 @@ function ReplayApp({ replay, onClose }) {
       <div className={`replay-body ${chatCollapsed ? "chat-is-collapsed" : ""} ${filesCollapsed ? "files-is-collapsed" : ""}`}>
         <ChatPanel
           frame={frame}
+          startedAt={replay.frames[0]?.timestamp}
           allActivities={replay.stats.toolCalls}
           collapsed={chatCollapsed}
           onToggle={() => setChatCollapsed(!chatCollapsed)}
