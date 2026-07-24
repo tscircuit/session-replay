@@ -13,7 +13,6 @@ import { ResizeHandle } from "../ui/ResizeHandle";
 
 const speedOptions = [0.5, 1, 1.5, 2];
 const timelineEventGap = 18;
-const timelineEdgePadding = 24;
 
 function compactText(value, limit = 72) {
   const text = String(value || "").replace(/\s+/g, " ").trim();
@@ -63,6 +62,14 @@ export function describeTimelineFrame(frame, eventNumber) {
   };
 }
 
+export function timelineScrollTarget({ clientWidth, framesLength, index, scrollWidth }) {
+  const maxScroll = Math.max(0, scrollWidth - clientWidth);
+  if (!maxScroll) return 0;
+  const progress = framesLength <= 1 ? 0 : index / (framesLength - 1);
+  const eventPosition = 5 + progress * (scrollWidth - 10);
+  return Math.max(0, Math.min(maxScroll, eventPosition - clientWidth / 2));
+}
+
 export function Timeline({
   replay,
   index,
@@ -77,6 +84,7 @@ export function Timeline({
   getMaxHeight,
 }) {
   const viewportRef = useRef(null);
+  const previousIndexRef = useRef(null);
   const frames = replay.frames;
   const start = frames[0]?.timestamp;
   const end = frames.at(-1)?.timestamp;
@@ -89,31 +97,23 @@ export function Timeline({
     const viewport = viewportRef.current;
     const track = viewport?.firstElementChild;
     if (!viewport || !track) return undefined;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const priorIndex = previousIndexRef.current;
+    previousIndexRef.current = index;
 
-    const revealActiveEvent = () => {
-      const maxScroll = Math.max(0, track.scrollWidth - viewport.clientWidth);
-      if (!maxScroll) {
-        viewport.scrollLeft = 0;
-        return;
-      }
-
-      const progress = frames.length <= 1 ? 0 : index / (frames.length - 1);
-      const eventPosition = 5 + progress * (track.scrollWidth - 10);
-      const visibleStart = viewport.scrollLeft + timelineEdgePadding;
-      const visibleEnd = viewport.scrollLeft + viewport.clientWidth - timelineEdgePadding;
-
-      if (eventPosition < visibleStart) {
-        viewport.scrollLeft = Math.max(0, eventPosition - timelineEdgePadding);
-      } else if (eventPosition > visibleEnd) {
-        viewport.scrollLeft = Math.min(
-          maxScroll,
-          eventPosition - viewport.clientWidth + timelineEdgePadding,
-        );
-      }
+    const revealActiveEvent = (behavior = "auto") => {
+      const left = timelineScrollTarget({
+        clientWidth: viewport.clientWidth,
+        framesLength: frames.length,
+        index,
+        scrollWidth: track.scrollWidth,
+      });
+      if (Math.abs(viewport.scrollLeft - left) < 1) return;
+      viewport.scrollTo({ left, behavior });
     };
 
-    revealActiveEvent();
-    const observer = new ResizeObserver(revealActiveEvent);
+    revealActiveEvent(priorIndex === null || reducedMotion ? "auto" : "smooth");
+    const observer = new ResizeObserver(() => revealActiveEvent());
     observer.observe(viewport);
     return () => observer.disconnect();
   }, [frames.length, index]);
