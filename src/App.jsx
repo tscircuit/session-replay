@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
+  ArrowUpDown,
   Bot,
   Check,
   ChevronDown,
@@ -187,6 +188,7 @@ function ImportScreen({ onLoad, error, setError }) {
   const [dragging, setDragging] = useState(false);
   const [sessions, setSessions] = useState([]);
   const [sessionQuery, setSessionQuery] = useState("");
+  const [sessionSort, setSessionSort] = useState("recent");
   const [sessionStatus, setSessionStatus] = useState("loading");
   const [openingPath, setOpeningPath] = useState("");
 
@@ -245,11 +247,30 @@ function ImportScreen({ onLoad, error, setError }) {
 
   const visibleSessions = useMemo(() => {
     const query = sessionQuery.trim().toLowerCase();
-    if (!query) return sessions;
-    return sessions.filter((session) =>
-      [session.title, session.cwd, session.id, session.filename]
-        .some((value) => value?.toLowerCase().includes(query)));
-  }, [sessionQuery, sessions]);
+    const filtered = query
+      ? sessions.filter((session) =>
+        [
+          session.title,
+          session.cwd,
+          session.id,
+          session.filename,
+          session.modifiedAt,
+          formatSessionDate(session.modifiedAt),
+          formatFileSize(session.size),
+        ].some((value) => String(value || "").toLowerCase().includes(query)))
+      : [...sessions];
+
+    if (sessionSort === "recent") return filtered;
+
+    return filtered.sort((a, b) => {
+      if (sessionSort === "oldest") {
+        return new Date(a.modifiedAt).getTime() - new Date(b.modifiedAt).getTime();
+      }
+      if (sessionSort === "largest") return (b.size || 0) - (a.size || 0);
+      if (sessionSort === "smallest") return (a.size || 0) - (b.size || 0);
+      return 0;
+    });
+  }, [sessionQuery, sessionSort, sessions]);
 
   return (
     <main className="import-page">
@@ -301,20 +322,36 @@ function ImportScreen({ onLoad, error, setError }) {
             </button>
           </header>
           {sessionStatus === "ready" && sessions.length > 0 && (
-            <label className="session-search">
-              <Search size={14} />
-              <input
-                value={sessionQuery}
-                onChange={(event) => setSessionQuery(event.target.value)}
-                placeholder="Search by project, path, or session ID"
-                aria-label="Search local sessions"
-              />
-              {sessionQuery && (
-                <button onClick={() => setSessionQuery("")} aria-label="Clear session search">
-                  <X size={13} />
-                </button>
-              )}
-            </label>
+            <div className="session-tools">
+              <label className="session-search">
+                <Search size={14} />
+                <input
+                  value={sessionQuery}
+                  onChange={(event) => setSessionQuery(event.target.value)}
+                  placeholder="Search project, time, or size"
+                  aria-label="Search local sessions by project, time, or size"
+                />
+                {sessionQuery && (
+                  <button onClick={() => setSessionQuery("")} aria-label="Clear session search">
+                    <X size={13} />
+                  </button>
+                )}
+              </label>
+              <label className="session-sort" title="Sort local sessions">
+                <ArrowUpDown size={13} />
+                <select
+                  value={sessionSort}
+                  onChange={(event) => setSessionSort(event.target.value)}
+                  aria-label="Sort local sessions"
+                >
+                  <option value="recent">Recent</option>
+                  <option value="oldest">Oldest</option>
+                  <option value="largest">Largest</option>
+                  <option value="smallest">Smallest</option>
+                </select>
+                <ChevronDown size={12} />
+              </label>
+            </div>
           )}
           <div className="session-list" aria-live="polite">
             {sessionStatus === "loading" && (

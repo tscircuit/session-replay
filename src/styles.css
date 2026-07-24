@@ -209,9 +209,13 @@
 }
 .refresh-sessions:hover:not(:disabled) { background: #292929; color: white; }
 .refresh-sessions:disabled { cursor: default; }
-.session-search {
-  height: 33px;
+.session-tools {
   margin: 10px 12px;
+  display: flex;
+  gap: 7px;
+}
+.session-search, .session-sort {
+  height: 33px;
   border: 1px solid #323232;
   border-radius: 8px;
   background: #121212;
@@ -221,6 +225,7 @@
   gap: 8px;
   padding: 0 10px;
 }
+.session-search { flex: 1; min-width: 0; }
 .session-search:focus-within { border-color: #4b6f66; }
 .session-search input {
   flex: 1;
@@ -241,6 +246,23 @@
   display: grid;
   place-items: center;
 }
+.session-sort {
+  flex: 0 0 auto;
+  gap: 6px;
+  padding-right: 7px;
+}
+.session-sort:focus-within { border-color: #4b6f66; color: #999; }
+.session-sort select {
+  min-width: 54px;
+  border: 0;
+  outline: 0;
+  appearance: none;
+  background: transparent;
+  color: #aaa;
+  cursor: pointer;
+  font-size: 10px;
+}
+.session-sort option { background: #1b1b1b; color: #ccc; }
 .session-list {
   flex: 1;
   min-height: 0;
@@ -248,7 +270,7 @@
   scrollbar-width: thin;
   scrollbar-color: #3b3b3b transparent;
 }
-.session-search + .session-list { border-top: 1px solid #242424; }
+.session-tools + .session-list { border-top: 1px solid #242424; }
 .session-row {
   width: 100%;
   min-height: 61px;
