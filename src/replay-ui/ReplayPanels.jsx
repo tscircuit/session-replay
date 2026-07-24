@@ -126,7 +126,7 @@ export function ChatPanel({ frame, startedAt, allActivities, collapsed, onToggle
         </div>
         <button onClick={onToggle} title="Collapse chat" aria-label="Collapse conversation panel"><PanelLeftClose size={17} /></button>
       </header>
-      <div className="chat-scroll" ref={scrollRef}>
+      <div className="chat-scroll" ref={scrollRef} tabIndex={0} aria-label="Conversation replay">
         {feed.map((item) =>
           item._kind === "message"
             ? <Message key={item.id} message={item} startedAt={startedAt} />
