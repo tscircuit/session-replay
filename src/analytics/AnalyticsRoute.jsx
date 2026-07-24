@@ -6,7 +6,6 @@ import {
   ChartNoAxesColumnIncreasing,
   ChevronRight,
   Clock3,
-  CodeXml,
   FileCode2,
   FilePenLine,
   Files,
@@ -14,7 +13,6 @@ import {
   LoaderCircle,
   MessageSquareText,
   Play,
-  TerminalSquare,
   Wrench,
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -91,24 +89,6 @@ function PanelHeading({ icon: Icon, title, copy, badge }) {
       </div>
       {badge && <span>{badge}</span>}
     </header>
-  );
-}
-
-function ExactCalls({ items }) {
-  if (!items.length) return <div className="analytics-empty">No tool calls were recorded.</div>;
-  return (
-    <div className="exact-call-list">
-      {items.map((item, index) => (
-        <div className="exact-call" key={`${item.tool}:${item.label}`}>
-          <span>{index + 1}</span>
-          <div>
-            <small><TerminalSquare size={12} /> {item.tool.replaceAll("_", " ")}</small>
-            <code title={item.label}>{item.label}</code>
-          </div>
-          <b>{item.count}×</b>
-        </div>
-      ))}
-    </div>
   );
 }
 
@@ -230,16 +210,6 @@ export function AnalyticsRoute({ transientReplay }) {
               `/analytics/tool/${encodeURIComponent(item.label)}?${params.toString()}`,
             )}
           />
-        </section>
-
-        <section className="analytics-panel exact-panel">
-          <PanelHeading
-            icon={CodeXml}
-            title="Most repeated exact calls"
-            copy="Specific commands or arguments Codex returned to most often"
-            badge="Normalized execution options"
-          />
-          <ExactCalls items={analytics.exactCalls} />
         </section>
 
         <section className="analytics-two-column file-analytics">

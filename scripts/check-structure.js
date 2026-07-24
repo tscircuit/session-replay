@@ -17,6 +17,7 @@ const SKIPPED_DIRECTORIES = new Set([
   "out",
 ]);
 const GENERATED_FILES = new Set([
+  ".git",
   "package-lock.json",
   "pnpm-lock.yaml",
   "yarn.lock",
