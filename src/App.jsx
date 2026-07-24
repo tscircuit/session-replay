@@ -40,6 +40,10 @@ import { SAMPLE_SESSION } from "./sample";
 
 const speedOptions = [0.5, 1, 1.5, 2];
 
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), Math.max(min, max));
+}
+
 function Mark() {
   return (
     <div className="mark" aria-hidden="true">
@@ -56,6 +60,97 @@ function Button({ className = "", children, ...props }) {
     <button className={`button ${className}`} {...props}>
       {children}
     </button>
+  );
+}
+
+function useMediaQuery(query) {
+  const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
+
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    const update = () => setMatches(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, [query]);
+
+  return matches;
+}
+
+function ResizeHandle({
+  className = "",
+  orientation,
+  value,
+  min,
+  max,
+  defaultValue,
+  invert = false,
+  disabled = false,
+  label,
+  onChange,
+}) {
+  const dragRef = useRef(null);
+  const [dragging, setDragging] = useState(false);
+  const resolveMax = () => typeof max === "function" ? max() : max;
+  const updateValue = (next) => onChange(clamp(next, min, resolveMax()));
+
+  const stopDragging = (target, pointerId) => {
+    dragRef.current = null;
+    setDragging(false);
+    document.body.classList.remove("is-resizing");
+    if (target?.hasPointerCapture?.(pointerId)) target.releasePointerCapture(pointerId);
+  };
+
+  useEffect(() => () => document.body.classList.remove("is-resizing"), []);
+
+  const coordinate = (event) => orientation === "vertical" ? event.clientX : event.clientY;
+  const direction = invert ? -1 : 1;
+  const resolvedMax = resolveMax();
+
+  return (
+    <div
+      className={`resize-handle ${orientation} ${dragging ? "dragging" : ""} ${className}`}
+      role="separator"
+      aria-label={label}
+      aria-orientation={orientation}
+      aria-valuemin={min}
+      aria-valuemax={Math.round(resolvedMax)}
+      aria-valuenow={Math.round(value)}
+      aria-hidden={disabled || undefined}
+      tabIndex={disabled ? -1 : 0}
+      onDoubleClick={() => !disabled && updateValue(defaultValue)}
+      onPointerDown={(event) => {
+        if (disabled || event.button !== 0) return;
+        event.preventDefault();
+        event.currentTarget.setPointerCapture(event.pointerId);
+        dragRef.current = { pointerId: event.pointerId, start: coordinate(event), value };
+        setDragging(true);
+        document.body.classList.add("is-resizing");
+      }}
+      onPointerMove={(event) => {
+        if (!dragRef.current || dragRef.current.pointerId !== event.pointerId) return;
+        event.preventDefault();
+        const delta = (coordinate(event) - dragRef.current.start) * direction;
+        updateValue(dragRef.current.value + delta);
+      }}
+      onPointerUp={(event) => stopDragging(event.currentTarget, event.pointerId)}
+      onPointerCancel={(event) => stopDragging(event.currentTarget, event.pointerId)}
+      onKeyDown={(event) => {
+        if (disabled) return;
+        const decreaseKey = orientation === "vertical" ? "ArrowLeft" : "ArrowUp";
+        const increaseKey = orientation === "vertical" ? "ArrowRight" : "ArrowDown";
+        if (event.key === "Home") {
+          event.preventDefault();
+          updateValue(defaultValue);
+        } else if (event.key === decreaseKey || event.key === increaseKey) {
+          event.preventDefault();
+          const amount = event.shiftKey ? 40 : 10;
+          const keyboardDirection = event.key === increaseKey ? 1 : -1;
+          updateValue(value + keyboardDirection * direction * amount);
+        }
+      }}
+      title={`${label}. Drag to resize; double-click to reset.`}
+    />
   );
 }
 
@@ -491,7 +586,17 @@ function SourceCode({ file }) {
   );
 }
 
-function Workspace({ frame, filePaths, selectedFile, setSelectedFile, collapsed, onToggle }) {
+function Workspace({
+  frame,
+  filePaths,
+  selectedFile,
+  setSelectedFile,
+  collapsed,
+  onToggle,
+  filesWidth,
+  setFilesWidth,
+  getFilesMax,
+}) {
   const [query, setQuery] = useState("");
   const files = frame.files;
   const file = files[selectedFile];
@@ -529,6 +634,18 @@ function Workspace({ frame, filePaths, selectedFile, setSelectedFile, collapsed,
         </div>
         <SourceCode file={file} />
       </div>
+      <ResizeHandle
+        className="files-resizer"
+        orientation="vertical"
+        value={filesWidth}
+        min={160}
+        max={getFilesMax}
+        defaultValue={215}
+        invert
+        disabled={collapsed}
+        label="Resize changed files panel"
+        onChange={setFilesWidth}
+      />
       {collapsed ? (
         <aside className="collapsed-panel right-collapsed">
           <button onClick={onToggle} title="Show files" aria-label="Show changed files panel"><Folder size={18} /></button>
@@ -562,12 +679,35 @@ function Workspace({ frame, filePaths, selectedFile, setSelectedFile, collapsed,
   );
 }
 
-function Timeline({ replay, index, setIndex, playing, setPlaying, onTogglePlaying, speed, setSpeed }) {
+function Timeline({
+  replay,
+  index,
+  setIndex,
+  playing,
+  setPlaying,
+  onTogglePlaying,
+  speed,
+  setSpeed,
+  height,
+  setHeight,
+  getMaxHeight,
+}) {
   const frames = replay.frames;
   const start = frames[0]?.timestamp;
   const end = frames.at(-1)?.timestamp;
   return (
     <footer className="timeline">
+      <ResizeHandle
+        className="timeline-resizer"
+        orientation="horizontal"
+        value={height}
+        min={72}
+        max={getMaxHeight}
+        defaultValue={92}
+        invert
+        label="Resize timeline"
+        onChange={setHeight}
+      />
       <div className="play-controls">
         <button onClick={() => setIndex(0)} title="Restart" aria-label="Restart replay"><RotateCcw size={16} /></button>
         <button
@@ -629,6 +769,9 @@ function Timeline({ replay, index, setIndex, playing, setPlaying, onTogglePlayin
 }
 
 function ReplayApp({ replay, onClose }) {
+  const rootRef = useRef(null);
+  const isNarrow = useMediaQuery("(max-width: 760px)");
+  const defaultMobileChatHeight = Math.max(150, Math.round((window.innerHeight - 150) * 0.42));
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
@@ -636,7 +779,27 @@ function ReplayApp({ replay, onClose }) {
   const [chatCollapsed, setChatCollapsed] = useState(false);
   const [filesCollapsed, setFilesCollapsed] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
+  const [chatWidth, setChatWidth] = useState(() => clamp(window.innerWidth * 0.35, 310, 520));
+  const [mobileChatHeight, setMobileChatHeight] = useState(defaultMobileChatHeight);
+  const [filesWidth, setFilesWidth] = useState(215);
+  const [timelineHeight, setTimelineHeight] = useState(92);
   const frame = replay.frames[index];
+  const getChatMax = () => {
+    if (isNarrow) {
+      const bodyHeight = rootRef.current?.querySelector(".replay-body")?.clientHeight || window.innerHeight - 150;
+      return Math.max(150, bodyHeight - 165);
+    }
+    const rootWidth = rootRef.current?.clientWidth || window.innerWidth;
+    return Math.max(260, rootWidth - 360);
+  };
+  const getFilesMax = () => {
+    const workspaceWidth = rootRef.current?.querySelector(".workspace")?.clientWidth || window.innerWidth * 0.65;
+    return Math.max(160, workspaceWidth - 285);
+  };
+  const getTimelineMax = () => {
+    const rootHeight = rootRef.current?.clientHeight || window.innerHeight;
+    return Math.max(72, rootHeight - (isNarrow ? 54 : 58) - 220);
+  };
   const togglePlaying = useCallback(() => {
     if (!playing && index >= replay.frames.length - 1) setIndex(0);
     setPlaying((value) => !value);
@@ -679,8 +842,29 @@ function ReplayApp({ replay, onClose }) {
     return () => window.removeEventListener("keydown", handler);
   }, [replay.frames.length, togglePlaying]);
 
+  useEffect(() => {
+    const fitPanels = () => {
+      if (isNarrow) setMobileChatHeight((value) => clamp(value, 150, getChatMax()));
+      else setChatWidth((value) => clamp(value, 260, getChatMax()));
+      setFilesWidth((value) => clamp(value, 160, getFilesMax()));
+      setTimelineHeight((value) => clamp(value, 72, getTimelineMax()));
+    };
+    fitPanels();
+    window.addEventListener("resize", fitPanels);
+    return () => window.removeEventListener("resize", fitPanels);
+  }, [isNarrow]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
-    <main className="replay-app">
+    <main
+      className="replay-app"
+      ref={rootRef}
+      style={{
+        "--chat-width": `${chatWidth}px`,
+        "--mobile-chat-height": `${mobileChatHeight}px`,
+        "--files-width": `${filesWidth}px`,
+        "--timeline-height": `${timelineHeight}px`,
+      }}
+    >
       <header className="topbar">
         <div className="topbar-left">
           <button
@@ -733,6 +917,17 @@ function ReplayApp({ replay, onClose }) {
           collapsed={chatCollapsed}
           onToggle={() => setChatCollapsed(!chatCollapsed)}
         />
+        <ResizeHandle
+          className="chat-resizer"
+          orientation={isNarrow ? "horizontal" : "vertical"}
+          value={isNarrow ? mobileChatHeight : chatWidth}
+          min={isNarrow ? 150 : 260}
+          max={getChatMax}
+          defaultValue={isNarrow ? defaultMobileChatHeight : clamp(window.innerWidth * 0.35, 310, 520)}
+          disabled={chatCollapsed}
+          label="Resize conversation panel"
+          onChange={isNarrow ? setMobileChatHeight : setChatWidth}
+        />
         <Workspace
           frame={frame}
           filePaths={replay.filePaths}
@@ -740,6 +935,9 @@ function ReplayApp({ replay, onClose }) {
           setSelectedFile={setSelectedFile}
           collapsed={filesCollapsed}
           onToggle={() => setFilesCollapsed(!filesCollapsed)}
+          filesWidth={filesWidth}
+          setFilesWidth={setFilesWidth}
+          getFilesMax={getFilesMax}
         />
       </div>
       <Timeline
@@ -751,6 +949,9 @@ function ReplayApp({ replay, onClose }) {
         onTogglePlaying={togglePlaying}
         speed={speed}
         setSpeed={setSpeed}
+        height={timelineHeight}
+        setHeight={setTimelineHeight}
+        getMaxHeight={getTimelineMax}
       />
       <div className="shortcut-hint"><Keyboard size={13} /> Space to play · ← → to step</div>
     </main>
