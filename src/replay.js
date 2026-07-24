@@ -151,6 +151,16 @@ function parseApplyPatch(patch) {
   });
 }
 
+export function fileChangesFromRecord(record) {
+  const event = normalizeRecord(record, 0);
+  if (event?.kind !== "tool") return [];
+  return parseApplyPatch(event.patch).map((change) => ({
+    path: change.path,
+    additions: (change.body.match(/^\+(?!\+\+)/gm) || []).length,
+    deletions: (change.body.match(/^-(?!---)/gm) || []).length,
+  }));
+}
+
 function parseUnifiedDiff(patch) {
   const files = [];
   const lines = patch.split(/\r?\n/);

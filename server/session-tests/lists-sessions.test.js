@@ -31,6 +31,21 @@ describe("local session discovery", () => {
     await writeFile(current, `${JSON.stringify({
       type: "session_meta",
       payload: { id: "current-id", cwd: "/workspace/current", timestamp: "2026-07-24T00:00:00Z" },
+    })}\n${JSON.stringify({
+      type: "response_item",
+      payload: {
+        type: "custom_tool_call",
+        name: "apply_patch",
+        input: [
+          "*** Begin Patch",
+          "*** Update File: src/app.js",
+          "@@",
+          "-const oldValue = true;",
+          "+const newValue = true;",
+          "+const enabled = true;",
+          "*** End Patch",
+        ].join("\n"),
+      },
     })}\n`);
     await utimes(current, new Date("2026-07-24T00:00:00Z"), new Date("2026-07-24T00:00:00Z"));
     await utimes(other, new Date("2026-07-24T02:00:00Z"), new Date("2026-07-24T02:00:00Z"));
@@ -38,6 +53,10 @@ describe("local session discovery", () => {
     const sessions = await listSessions({ root, currentWorkspace: "/workspace/current" });
 
     expect(sessions.map((session) => session.id)).toEqual(["current-id", "other-id"]);
-    expect(sessions[0]).toMatchObject({ current: true, title: "current" });
+    expect(sessions[0]).toMatchObject({
+      current: true,
+      title: "current",
+      changeStats: { additions: 2, deletions: 1, files: 1 },
+    });
   });
 });

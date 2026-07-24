@@ -3,6 +3,7 @@ import { readdir, readFile, realpath, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import readline from "node:readline";
+import { fileChangesFromRecord } from "../src/replay.js";
 
 const SESSION_LIMIT = 75;
 
@@ -32,24 +33,40 @@ async function collectSessionFiles(directory, files = []) {
   return files;
 }
 
-async function readFirstRecord(filePath) {
+async function readSessionOverview(filePath) {
   const input = createReadStream(filePath, { encoding: "utf8" });
   const lines = readline.createInterface({ input, crlfDelay: Infinity });
+  let record = null;
+  const changedFiles = new Set();
+  let additions = 0;
+  let deletions = 0;
   try {
     for await (const line of lines) {
       if (!line.trim()) continue;
-      return JSON.parse(line);
+      try {
+        const parsed = JSON.parse(line);
+        record ||= parsed;
+        fileChangesFromRecord(parsed).forEach((change) => {
+          changedFiles.add(change.path);
+          additions += change.additions;
+          deletions += change.deletions;
+        });
+      } catch {
+        // Invalid records are ignored in the same way as the replay parser.
+      }
     }
-  } catch {
-    return null;
   } finally {
     lines.close();
     input.destroy();
   }
-  return null;
+  return {
+    record,
+    changeStats: { additions, deletions, files: changedFiles.size },
+  };
 }
 
-function sessionMetadata(file, root, record) {
+function sessionMetadata(file, root, overview) {
+  const { record, changeStats } = overview;
   const payload = record?.payload || {};
   const cwd = payload.cwd || "";
   return {
@@ -61,6 +78,7 @@ function sessionMetadata(file, root, record) {
     startedAt: payload.timestamp || record?.timestamp || file.modifiedAt.toISOString(),
     modifiedAt: file.modifiedAt.toISOString(),
     size: file.size,
+    changeStats,
   };
 }
 
@@ -74,7 +92,7 @@ export async function listSessions({
 
   const sessions = await Promise.all(
     files.slice(0, limit).map(async (file) =>
-      sessionMetadata(file, root, await readFirstRecord(file.path))),
+      sessionMetadata(file, root, await readSessionOverview(file.path))),
   );
   const normalizedWorkspace = path.resolve(currentWorkspace);
   const currentIndex = sessions.findIndex(

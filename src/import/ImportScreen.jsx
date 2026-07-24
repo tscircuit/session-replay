@@ -251,7 +251,15 @@ export function ImportScreen({ onLoad, error, setError }) {
                 </span>
                 <span className="session-row-meta">
                   <time dateTime={session.modifiedAt}>{formatSessionDate(session.modifiedAt)}</time>
-                  <small>{formatFileSize(session.size)}</small>
+                  <small className="session-change-stats" title={formatFileSize(session.size)}>
+                    <b>+{session.changeStats?.additions || 0}</b>
+                    <em>−{session.changeStats?.deletions || 0}</em>
+                    <span>
+                      {session.changeStats?.files || 0}
+                      {" "}
+                      {session.changeStats?.files === 1 ? "file" : "files"}
+                    </span>
+                  </small>
                 </span>
                 <ChevronRight size={15} className="session-row-arrow" />
               </button>
