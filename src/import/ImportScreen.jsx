@@ -255,7 +255,8 @@ export function ImportScreen({ onLoad, error, setError }) {
                 </span>
                 <span className="session-row-meta">
                   <time dateTime={session.modifiedAt}>{formatSessionDate(session.modifiedAt)}</time>
-                  <small className="session-change-stats" title={formatFileSize(session.size)}>
+                  <small className="session-change-stats">
+                    <span className="session-size">{formatFileSize(session.size)}</span>
                     <b>+{session.changeStats?.additions || 0}</b>
                     <em>−{session.changeStats?.deletions || 0}</em>
                     <span>

@@ -81,6 +81,7 @@ export function Timeline({
   const start = frames[0]?.timestamp;
   const end = frames.at(-1)?.timestamp;
   const trackMinWidth = Math.max(0, (frames.length - 1) * timelineEventGap + 10);
+  const progress = frames.length <= 1 ? 0 : index / (frames.length - 1);
   const activeSummary = describeTimelineFrame(frames[index], index + 1);
   const ActiveIcon = activeSummary.icon;
 
@@ -161,7 +162,7 @@ export function Timeline({
         </div>
         <div className="range-viewport" ref={viewportRef}>
           <div className="range-shell" style={{ minWidth: `${trackMinWidth}px` }}>
-            <div className="range-progress" style={{ width: `${frames.length <= 1 ? 0 : (index / (frames.length - 1)) * 100}%` }} />
+            <div className="range-progress" style={{ transform: `scaleX(${progress})` }} />
             <input
               aria-label="Session timeline"
               aria-keyshortcuts="ArrowLeft ArrowRight"
