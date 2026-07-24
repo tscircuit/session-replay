@@ -205,6 +205,13 @@ function SourceCode({ file }) {
   );
 }
 
+export function chooseWorkspaceFile(files, selectedFile, focusFile, frameChanged) {
+  if (!frameChanged && files[selectedFile]) return selectedFile;
+  if (focusFile && files[focusFile]) return focusFile;
+  if (files[selectedFile]) return selectedFile;
+  return Object.keys(files)[0] || "";
+}
+
 export function Workspace({
   frame,
   filePaths,
@@ -219,6 +226,7 @@ export function Workspace({
   const [query, setQuery] = useSearchParamState("filter");
   const [openFiles, setOpenFiles] = useState([]);
   const tabsRef = useRef(null);
+  const previousFrameIdRef = useRef(frame.id);
   const files = frame.files;
   const file = files[selectedFile];
 
@@ -229,13 +237,16 @@ export function Workspace({
   }, [setSelectedFile]);
 
   useEffect(() => {
-    const nextFile = frame.focusFile && files[frame.focusFile]
-      ? frame.focusFile
-      : files[selectedFile]
-        ? selectedFile
-        : Object.keys(files)[0] || "";
+    const frameChanged = previousFrameIdRef.current !== frame.id;
+    previousFrameIdRef.current = frame.id;
+    const nextFile = chooseWorkspaceFile(
+      files,
+      selectedFile,
+      frame.focusFile,
+      frameChanged,
+    );
     openFile(nextFile);
-  }, [files, frame.focusFile, openFile, selectedFile]);
+  }, [files, frame.focusFile, frame.id, openFile, selectedFile]);
 
   useEffect(() => {
     const tabs = tabsRef.current;
