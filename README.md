@@ -13,7 +13,7 @@ can also drop in a session export or use the built-in demo. The viewer parses ch
 messages, tool calls, and `apply_patch` events, then reconstructs the state of
 changed files at every replay frame.
 
-Static deployments fall back to six featured session exports in `public/sessions`.
+Static deployments fall back to seven featured session exports in `public/sessions`.
 The files are fetched on demand, so they do not increase the initial JavaScript
 bundle.
 

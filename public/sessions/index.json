@@ -1,6 +1,21 @@
 {
   "sessions": [
     {
+      "path": "session-replay.jsonl",
+      "filename": "session-replay.jsonl",
+      "id": "019f93c9-a078-7b83-820d-1d6d723a3839",
+      "cwd": "/workspace/session-replay",
+      "title": "session-replay",
+      "startedAt": "2026-07-24T11:01:32.411Z",
+      "modifiedAt": "2026-07-24T11:17:55.506Z",
+      "size": 2355057,
+      "changeStats": {
+        "additions": 319,
+        "deletions": 86,
+        "files": 3
+      }
+    },
+    {
       "path": "length-matching-solver.jsonl",
       "filename": "length-matching-solver.jsonl",
       "id": "019f91e5-ca3c-73e0-86b5-16d528c705a0",
