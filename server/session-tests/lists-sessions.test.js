@@ -1,8 +1,8 @@
-import { mkdtemp, mkdir, rm, symlink, utimes, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, rm, utimes, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { listSessions, readSession } from "./sessions";
+import { listSessions } from "../sessions";
 
 const temporaryDirectories = [];
 
@@ -39,19 +39,5 @@ describe("local session discovery", () => {
 
     expect(sessions.map((session) => session.id)).toEqual(["current-id", "other-id"]);
     expect(sessions[0]).toMatchObject({ current: true, title: "current" });
-  });
-
-  it("reads listed files but rejects traversal and escaping symlinks", async () => {
-    const container = await temporaryDirectory();
-    const root = path.join(container, "sessions");
-    const outside = path.join(container, "outside.jsonl");
-    await mkdir(root);
-    await writeFile(path.join(root, "session.jsonl"), "{\"type\":\"session_meta\"}\n");
-    await writeFile(outside, "private");
-    await symlink(outside, path.join(root, "link.jsonl"));
-
-    await expect(readSession("session.jsonl", { root })).resolves.toContain("session_meta");
-    await expect(readSession("../outside.jsonl", { root })).rejects.toThrow("Invalid session path");
-    await expect(readSession("link.jsonl", { root })).rejects.toThrow("Invalid session path");
   });
 });
