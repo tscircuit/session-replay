@@ -120,8 +120,8 @@
   min-height: 43px;
   border-bottom: 1px solid #242725;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 30px;
-  align-content: center;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
   gap: 7px;
 }
 
@@ -134,16 +134,19 @@
   white-space: nowrap;
 }
 
-.tool-mini-ranking b { color: #747c79; font: 500 8px DM Mono, monospace; text-align: right; }
-.tool-mini-ranking i {
-  grid-column: 1 / -1;
-  height: 2px;
-  border-radius: 3px;
-  background: #272b29;
-  overflow: hidden;
+.tool-mini-ranking b {
+  min-width: 29px;
+  min-height: 23px;
+  padding: 0 6px;
+  border: 1px solid #303432;
+  border-radius: 6px;
+  background: #1b1e1d;
+  color: #8f9592;
+  font: 500 8px DM Mono, monospace;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-
-.tool-mini-ranking em { height: 100%; border-radius: inherit; background: #279d7e; display: block; }
 .tool-detail-empty {
   min-height: 100px;
   margin: 0;
