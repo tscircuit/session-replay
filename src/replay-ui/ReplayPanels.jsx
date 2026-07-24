@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Bot,
   Check,
@@ -216,21 +216,97 @@ export function Workspace({
   getFilesMax,
 }) {
   const [query, setQuery] = useState("");
+  const [openFiles, setOpenFiles] = useState([]);
+  const tabsRef = useRef(null);
   const files = frame.files;
   const file = files[selectedFile];
 
+  const openFile = useCallback((path) => {
+    if (!path) return;
+    setOpenFiles((current) => current.includes(path) ? current : [...current, path]);
+    setSelectedFile(path);
+  }, [setSelectedFile]);
+
   useEffect(() => {
-    if (frame.focusFile && files[frame.focusFile]) setSelectedFile(frame.focusFile);
-    else if (!files[selectedFile]) setSelectedFile(Object.keys(files)[0] || "");
-  }, [frame.id]); // eslint-disable-line react-hooks/exhaustive-deps
+    const nextFile = frame.focusFile && files[frame.focusFile]
+      ? frame.focusFile
+      : files[selectedFile]
+        ? selectedFile
+        : Object.keys(files)[0] || "";
+    openFile(nextFile);
+  }, [files, frame.focusFile, openFile, selectedFile]);
+
+  useEffect(() => {
+    const tabs = tabsRef.current;
+    const activeTab = tabs?.querySelector('[aria-selected="true"]');
+    if (!tabs || !activeTab) return;
+
+    const tabsBounds = tabs.getBoundingClientRect();
+    const activeBounds = activeTab.getBoundingClientRect();
+    if (activeBounds.left < tabsBounds.left) {
+      tabs.scrollBy({ left: activeBounds.left - tabsBounds.left - 1, behavior: "smooth" });
+    } else if (activeBounds.right > tabsBounds.right) {
+      tabs.scrollBy({ left: activeBounds.right - tabsBounds.right + 1, behavior: "smooth" });
+    }
+  }, [openFiles, selectedFile]);
+
+  const selectAdjacentTab = (direction) => {
+    const selectableFiles = openFiles.filter((path) => files[path]);
+    if (!selectableFiles.length) return;
+    const currentIndex = selectableFiles.indexOf(selectedFile);
+    const nextIndex = currentIndex < 0
+      ? 0
+      : (currentIndex + direction + selectableFiles.length) % selectableFiles.length;
+    setSelectedFile(selectableFiles[nextIndex]);
+  };
 
   return (
     <section className="workspace">
       <div className="editor">
         <header className="editor-header">
-          <div className={`tab ${file?.status || ""}`}>
-            <FileIcon path={file?.path} status={file?.status} />
-            <span>{file?.path?.split("/").at(-1) || "File state"}</span>
+          <div
+            className="editor-tabs"
+            role="tablist"
+            aria-label="Open files"
+            ref={tabsRef}
+            onWheel={(event) => {
+              if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
+                event.currentTarget.scrollLeft += event.deltaY;
+              }
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+                event.preventDefault();
+                selectAdjacentTab(event.key === "ArrowRight" ? 1 : -1);
+              } else if (event.key === "Home" || event.key === "End") {
+                event.preventDefault();
+                const selectableFiles = openFiles.filter((path) => files[path]);
+                setSelectedFile(
+                  event.key === "Home" ? selectableFiles[0] : selectableFiles.at(-1),
+                );
+              }
+            }}
+          >
+            {openFiles.map((path) => {
+              const tabFile = files[path];
+              const active = path === selectedFile;
+              return (
+                <button
+                  className={`tab ${tabFile?.status || ""} ${active ? "active" : ""}`}
+                  key={path}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  disabled={!tabFile}
+                  tabIndex={active ? 0 : -1}
+                  title={path}
+                  onClick={() => setSelectedFile(path)}
+                >
+                  <FileIcon path={path} status={tabFile?.status} />
+                  <span>{path.split("/").at(-1)}</span>
+                </button>
+              );
+            })}
           </div>
           <div className="editor-actions">
             {file && (
@@ -285,7 +361,7 @@ export function Workspace({
               aria-label="Filter changed files"
             />
           </label>
-          <FileTree files={files} selected={selectedFile} onSelect={setSelectedFile} query={query} />
+          <FileTree files={files} selected={selectedFile} onSelect={openFile} query={query} />
           <footer className="files-legend">
             <span className="added">Added</span>
             <span className="modified">Modified</span>
