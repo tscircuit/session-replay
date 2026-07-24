@@ -385,6 +385,11 @@ export function buildReplay(records, filename = "session.jsonl") {
         timestamp: event.timestamp,
         input: event.input,
         files: changes.map((change) => change.path),
+        changes: changes.map((change) => ({
+          path: change.path,
+          additions: (change.body.match(/^\+(?!\+\+)/gm) || []).length,
+          deletions: (change.body.match(/^-(?!---)/gm) || []).length,
+        })),
       });
       shouldFrame = true;
     } else if (event.kind === "tokens") {

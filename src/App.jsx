@@ -2,6 +2,8 @@ import React, { useCallback, useState } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { ImportScreen } from "./import/ImportScreen";
 import { ReplayRoute } from "./routing/ReplayRoute";
+import { AnalyticsRoute } from "./analytics/AnalyticsRoute";
+import { ToolAnalyticsRoute } from "./analytics/ToolAnalyticsRoute";
 
 function replaySourceKey(source) {
   if (source.session) {
@@ -31,6 +33,14 @@ export default function App() {
       <Route
         path="/replay"
         element={<ReplayRoute transientReplay={transientReplay} />}
+      />
+      <Route
+        path="/analytics"
+        element={<AnalyticsRoute transientReplay={transientReplay} />}
+      />
+      <Route
+        path="/analytics/tool/:toolName"
+        element={<ToolAnalyticsRoute transientReplay={transientReplay} />}
       />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

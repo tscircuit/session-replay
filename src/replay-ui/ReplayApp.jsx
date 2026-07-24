@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
+  ChartNoAxesColumnIncreasing,
   Clock3,
   Code2,
   Info,
@@ -28,7 +29,7 @@ function useMediaQuery(query) {
   return matches;
 }
 
-export function ReplayApp({ replay, onClose }) {
+export function ReplayApp({ replay, onClose, onAnalytics }) {
   const rootRef = useRef(null);
   const isNarrow = useMediaQuery("(max-width: 760px)");
   const defaultMobileChatHeight = Math.max(150, Math.round((window.innerHeight - 150) * 0.42));
@@ -167,6 +168,13 @@ export function ReplayApp({ replay, onClose }) {
           <span><Clock3 size={14} /> {timeDistance(replay.frames[0]?.timestamp, replay.frames.at(-1)?.timestamp) || "replay"}</span>
         </div>
         <div className="topbar-actions">
+          <button
+            onClick={onAnalytics}
+            aria-label="Open session analytics"
+            title="Session analytics"
+          >
+            <ChartNoAxesColumnIncreasing size={17} />
+          </button>
           <button
             onClick={() => setInfoParam(showInfo ? "" : "1")}
             className={showInfo ? "active" : ""}
