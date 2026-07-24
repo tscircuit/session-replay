@@ -6,7 +6,6 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
-  Circle,
   Clock3,
   Code2,
   File,
@@ -40,6 +39,8 @@ import { buildReplay, formatTime, parseSessionText, timeDistance } from "./repla
 import { SAMPLE_SESSION } from "./sample";
 
 const speedOptions = [0.5, 1, 1.5, 2];
+const timelineEventGap = 18;
+const timelineEdgePadding = 24;
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), Math.max(min, max));
@@ -729,9 +730,45 @@ function Timeline({
   setHeight,
   getMaxHeight,
 }) {
+  const viewportRef = useRef(null);
   const frames = replay.frames;
   const start = frames[0]?.timestamp;
   const end = frames.at(-1)?.timestamp;
+  const trackMinWidth = Math.max(0, (frames.length - 1) * timelineEventGap + 10);
+
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    const track = viewport?.firstElementChild;
+    if (!viewport || !track) return undefined;
+
+    const revealActiveEvent = () => {
+      const maxScroll = Math.max(0, track.scrollWidth - viewport.clientWidth);
+      if (!maxScroll) {
+        viewport.scrollLeft = 0;
+        return;
+      }
+
+      const progress = frames.length <= 1 ? 0 : index / (frames.length - 1);
+      const eventPosition = 5 + progress * (track.scrollWidth - 10);
+      const visibleStart = viewport.scrollLeft + timelineEdgePadding;
+      const visibleEnd = viewport.scrollLeft + viewport.clientWidth - timelineEdgePadding;
+
+      if (eventPosition < visibleStart) {
+        viewport.scrollLeft = Math.max(0, eventPosition - timelineEdgePadding);
+      } else if (eventPosition > visibleEnd) {
+        viewport.scrollLeft = Math.min(
+          maxScroll,
+          eventPosition - viewport.clientWidth + timelineEdgePadding,
+        );
+      }
+    };
+
+    revealActiveEvent();
+    const observer = new ResizeObserver(revealActiveEvent);
+    observer.observe(viewport);
+    return () => observer.disconnect();
+  }, [frames.length, index]);
+
   return (
     <footer className="timeline">
       <ResizeHandle
@@ -769,37 +806,37 @@ function Timeline({
           <span>{formatTime(frames[index]?.timestamp, `Event ${index + 1}`)}</span>
           <span>{timeDistance(start, frames[index]?.timestamp)} / {timeDistance(start, end)}</span>
         </div>
-        <div className="range-shell">
-          <div className="range-progress" style={{ width: `${frames.length <= 1 ? 0 : (index / (frames.length - 1)) * 100}%` }} />
-          <input
-            aria-label="Session timeline"
-            type="range"
-            min="0"
-            max={Math.max(0, frames.length - 1)}
-            value={index}
-            aria-valuetext={`Event ${index + 1} of ${frames.length}`}
-            onChange={(event) => {
-              setPlaying(false);
-              setIndex(Number(event.target.value));
-            }}
-          />
-          <div className="ticks">
-            {frames.map((frame, tick) => (
-              <button
-                key={frame.id}
-                className={`${tick <= index ? "passed" : ""} ${frame.event?.kind}`}
-                style={{ left: `${frames.length <= 1 ? 0 : (tick / (frames.length - 1)) * 100}%` }}
-                onClick={() => { setPlaying(false); setIndex(tick); }}
-                title={`${frame.event?.kind || "event"} · ${formatTime(frame.timestamp)}`}
-                aria-label={`Go to event ${tick + 1}: ${frame.event?.kind || "event"}`}
-                tabIndex={-1}
-              />
-            ))}
+        <div className="range-viewport" ref={viewportRef}>
+          <div className="range-shell" style={{ minWidth: `${trackMinWidth}px` }}>
+            <div className="range-progress" style={{ width: `${frames.length <= 1 ? 0 : (index / (frames.length - 1)) * 100}%` }} />
+            <input
+              aria-label="Session timeline"
+              aria-keyshortcuts="ArrowLeft ArrowRight"
+              type="range"
+              min="0"
+              max={Math.max(0, frames.length - 1)}
+              value={index}
+              aria-valuetext={`Event ${index + 1} of ${frames.length}`}
+              onChange={(event) => {
+                setPlaying(false);
+                setIndex(Number(event.target.value));
+              }}
+            />
+            <div className="ticks">
+              {frames.map((frame, tick) => (
+                <button
+                  key={frame.id}
+                  className={`${tick <= index ? "passed" : ""} ${frame.event?.kind}`}
+                  style={{ left: `${frames.length <= 1 ? 0 : (tick / (frames.length - 1)) * 100}%` }}
+                  onClick={() => { setPlaying(false); setIndex(tick); }}
+                  title={`${frame.event?.kind || "event"} · ${formatTime(frame.timestamp)}`}
+                  aria-label={`Go to event ${tick + 1}: ${frame.event?.kind || "event"}`}
+                  tabIndex={-1}
+                />
+              ))}
+            </div>
           </div>
         </div>
-      </div>
-      <div className="timeline-status" aria-live="polite">
-        <span><Circle size={8} fill="currentColor" /> Event {index + 1} of {frames.length}</span>
       </div>
     </footer>
   );
@@ -858,19 +895,20 @@ function ReplayApp({ replay, onClose }) {
         setShowInfo(false);
         return;
       }
-      if (
-        event.target instanceof Element
-        && event.target.closest("button, input, textarea, select, a, [contenteditable='true']")
-      ) return;
+      const target = event.target instanceof Element ? event.target : null;
+      const isEditing = target?.closest("textarea, select, input:not([type='range']), [contenteditable='true']");
       if (event.code === "Space") {
+        if (target?.closest("button, input, textarea, select, a, [contenteditable='true']")) return;
         event.preventDefault();
         togglePlaying();
       }
-      if (event.key === "ArrowRight") {
+      if (event.key === "ArrowRight" && !isEditing) {
+        event.preventDefault();
         setPlaying(false);
         setIndex((value) => Math.min(replay.frames.length - 1, value + 1));
       }
-      if (event.key === "ArrowLeft") {
+      if (event.key === "ArrowLeft" && !isEditing) {
+        event.preventDefault();
         setPlaying(false);
         setIndex((value) => Math.max(0, value - 1));
       }
