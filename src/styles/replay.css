@@ -97,7 +97,7 @@
 .activity-check { color: var(--accent); }
 .chat-footer { border-top: 1px solid var(--border-soft); display: flex; justify-content: space-between; align-items: center; padding: 0 15px; color: #6f6f6f; font-size: 9px; }
 .chat-footer span { display: flex; align-items: center; gap: 5px; }
-.empty-panel, .empty-files { color: #666; display: grid; place-items: center; height: 100%; font-size: 11px; }
+.empty-files { color: #666; display: grid; place-items: center; height: 100%; font-size: 11px; }
 
 .workspace { min-width: 0; min-height: 0; display: grid; grid-template-columns: minmax(0,1fr) 5px var(--files-width, 215px); background: #0f0f0f; }
 .replay-body.files-is-collapsed .workspace { grid-template-columns: minmax(0,1fr) 0 43px; }
@@ -142,9 +142,9 @@
 .file-search input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: #bbb; font-size: 10px; }
 .file-search input::placeholder { color: #5c5c5c; }
 .file-tree { overflow-y: auto; padding: 5px 7px; }
-.tree-root, .file-row { height: 28px; display: flex; align-items: center; gap: 6px; font-size: 10px; }
-.tree-root { color: #7c7c7c; padding: 0 5px; }
-.file-row { border: 0; background: none; width: 100%; border-radius: 5px; padding: 0 7px 0 26px; cursor: pointer; color: #a7a7a7; }
+.folder-row, .file-row { --depth: 0; height: 28px; display: flex; align-items: center; gap: 6px; font-size: 10px; }
+.folder-row { color: #7c7c7c; padding: 0 5px 0 calc(5px + var(--depth) * 14px); }
+.file-row { border: 0; background: none; width: 100%; border-radius: 5px; padding: 0 7px 0 calc(10px + var(--depth) * 14px); cursor: pointer; color: #a7a7a7; }
 .file-row:hover { background: #202020; }
 .file-row.selected { background: #2a2a2a; }
 .file-row.added, .tab.added, .files-legend .added { color: #57b87a; }

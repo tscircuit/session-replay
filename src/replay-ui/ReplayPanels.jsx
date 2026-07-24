@@ -132,7 +132,6 @@ export function ChatPanel({ frame, startedAt, allActivities, collapsed, onToggle
             ? <Message key={item.id} message={item} startedAt={startedAt} />
             : <Activity key={item.id} activity={item} />,
         )}
-        {!feed.length && <div className="empty-panel">No conversation at this point.</div>}
       </div>
       <footer className="chat-footer">
         <span><Zap size={13} /> {allActivities} tool calls</span>
@@ -149,22 +148,101 @@ function FileIcon({ path, status }) {
   return <File size={15} />;
 }
 
+function pathParts(path = "") {
+  return String(path).split(/[\\/]+/).filter(Boolean);
+}
+
+export function fileBreadcrumbSegments(path) {
+  return pathParts(path);
+}
+
+export function buildFileTree(files, query = "") {
+  const root = { children: new Map() };
+  const lowerQuery = query.toLowerCase();
+  const visible = Object.values(files)
+    .filter((file) => file.path.toLowerCase().includes(lowerQuery))
+    .sort((a, b) => a.path.localeCompare(b.path));
+
+  visible.forEach((file) => {
+    const parts = pathParts(file.path);
+    let current = root;
+    parts.slice(0, -1).forEach((part, index) => {
+      const folderPath = parts.slice(0, index + 1).join("/");
+      if (!current.children.has(part)) {
+        current.children.set(part, {
+          children: new Map(),
+          kind: "folder",
+          name: part,
+          path: folderPath,
+        });
+      }
+      current = current.children.get(part);
+    });
+    current.children.set(file.path, {
+      file,
+      kind: "file",
+      name: parts.at(-1) || file.path,
+      path: file.path,
+    });
+  });
+
+  const compactFolder = (entry) => {
+    const names = [entry.name];
+    let current = entry;
+    while (current.children.size === 1) {
+      const onlyChild = [...current.children.values()][0];
+      if (onlyChild.kind !== "folder") break;
+      names.push(onlyChild.name);
+      current = onlyChild;
+    }
+    return current === entry ? entry : { ...current, name: names.join("/") };
+  };
+
+  const flatten = (node, depth = 0) => [...node.children.values()]
+    .sort((a, b) => {
+      if (a.kind !== b.kind) return a.kind === "folder" ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    })
+    .flatMap((entry) => {
+      const compacted = entry.kind === "folder" ? compactFolder(entry) : entry;
+      return [
+        { ...compacted, depth },
+        ...(compacted.kind === "folder" ? flatten(compacted, depth + 1) : []),
+      ];
+    });
+
+  return flatten(root);
+}
+
 function FileTree({ files, selected, onSelect, query }) {
-  const visible = Object.values(files).filter((file) => file.path.toLowerCase().includes(query.toLowerCase()));
-  if (!visible.length) return <div className="empty-files">No files yet</div>;
+  const entries = buildFileTree(files, query);
+  if (!entries.length) return <div className="empty-files">No files yet</div>;
   return (
-    <div className="file-tree">
-      <div className="tree-root"><ChevronDown size={14} /><FolderOpen size={15} /><span>workspace</span></div>
-      {visible.map((file) => (
-        <button
-          key={file.path}
-          className={`file-row ${file.status} ${selected === file.path ? "selected" : ""} ${file.deleted ? "deleted" : ""}`}
-          onClick={() => onSelect(file.path)}
-          aria-current={selected === file.path ? "true" : undefined}
-          aria-label={`${file.path}, ${file.status}`}
+    <div className="file-tree" role="tree" aria-label="Changed file tree">
+      {entries.map((entry) => entry.kind === "folder" ? (
+        <div
+          key={entry.path}
+          className="folder-row"
+          role="treeitem"
+          aria-expanded="true"
+          style={{ "--depth": entry.depth }}
         >
-          <FileIcon path={file.path} status={file.status} />
-          <span title={file.path}>{file.path.split("/").at(-1)}</span>
+          <ChevronDown size={14} />
+          <FolderOpen size={15} />
+          <span title={entry.path}>{entry.name}</span>
+        </div>
+      ) : (
+        <button
+          key={entry.path}
+          className={`file-row ${entry.file.status} ${selected === entry.path ? "selected" : ""} ${entry.file.deleted ? "deleted" : ""}`}
+          onClick={() => onSelect(entry.path)}
+          aria-current={selected === entry.path ? "true" : undefined}
+          aria-label={`${entry.path}, ${entry.file.status}`}
+          role="treeitem"
+          style={{ "--depth": entry.depth }}
+        >
+          <FileIcon path={entry.path} status={entry.file.status} />
+          <span title={entry.path}>{entry.name}</span>
         </button>
       ))}
     </div>
@@ -336,11 +414,9 @@ export function Workspace({
           </div>
         </header>
         <div className="breadcrumb">
-          <Folder size={13} />
-          <span>workspace</span>
-          {file?.path?.split("/").map((part, index, parts) => (
+          {(file ? fileBreadcrumbSegments(file.path) : ["No file selected"]).map((part, index, parts) => (
             <span key={`${part}-${index}`} className={index === parts.length - 1 ? "current" : ""}>
-              <ChevronRight size={12} /> {part}
+              {index > 0 && <ChevronRight size={12} />} {part}
             </span>
           ))}
         </div>
