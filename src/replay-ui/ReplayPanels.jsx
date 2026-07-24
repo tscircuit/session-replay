@@ -82,6 +82,10 @@ function Activity({ activity }) {
   );
 }
 
+export function isVisibleActivity(activity) {
+  return activity.name !== "write_stdin";
+}
+
 export function ChatPanel({ frame, startedAt, allActivities, collapsed, onToggle }) {
   const scrollRef = useRef(null);
   useEffect(() => {
@@ -91,7 +95,9 @@ export function ChatPanel({ frame, startedAt, allActivities, collapsed, onToggle
   const feed = useMemo(() => {
     const items = [
       ...frame.messages.map((item) => ({ ...item, _kind: "message" })),
-      ...frame.activities.map((item) => ({ ...item, _kind: "activity" })),
+      ...frame.activities
+        .filter(isVisibleActivity)
+        .map((item) => ({ ...item, _kind: "activity" })),
     ];
     return items.sort((a, b) => {
       const ta = new Date(a.timestamp || 0).getTime();
