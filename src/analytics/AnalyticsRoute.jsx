@@ -20,6 +20,7 @@ import { formatTime, timeDistance } from "../replay";
 import { useRouteReplay } from "../routing/useRouteReplay";
 import { Mark } from "../ui/Mark";
 import { buildSessionAnalytics } from "./sessionAnalytics";
+import { ToolUsageDonut } from "./ToolUsageDonut";
 
 function compactNumber(value) {
   if (!Number.isFinite(value)) return "—";
@@ -41,7 +42,6 @@ function Metric({ icon: Icon, label, value, note, tone = "" }) {
 }
 
 function Ranking({ items, empty, renderMeta, onSelect }) {
-  const maximum = items[0]?.count || 1;
   if (!items.length) return <div className="analytics-empty">{empty}</div>;
   return (
     <div className="analytics-ranking">
@@ -54,11 +54,11 @@ function Ranking({ items, empty, renderMeta, onSelect }) {
                 <strong title={item.label}>{item.label.replaceAll("_", " ")}</strong>
                 {renderMeta?.(item)}
               </div>
-              <span className="rank-track">
-                <i style={{ width: `${Math.max(4, (item.count / maximum) * 100)}%` }} />
-              </span>
             </div>
-            <b>{item.count}{onSelect && <ChevronRight size={13} />}</b>
+            <span className="rank-count">
+              {item.count}
+              {onSelect && <ChevronRight size={13} />}
+            </span>
           </>
         );
         return onSelect ? (
@@ -128,6 +128,9 @@ export function AnalyticsRoute({ transientReplay }) {
   ) || "—";
   const eventTotal = replay.stats.toolCalls + replay.stats.messages;
   const toolShare = eventTotal ? Math.round((replay.stats.toolCalls / eventTotal) * 100) : 0;
+  const openTool = (item) => navigate(
+    `/analytics/tool/${encodeURIComponent(item.label)}?${params.toString()}`,
+  );
   return (
     <main className="analytics-page">
       <nav className="analytics-nav">
@@ -177,39 +180,29 @@ export function AnalyticsRoute({ transientReplay }) {
           <PanelHeading
             icon={Gauge}
             title="Working pattern"
-            copy="The balance between conversation and action"
+            copy="The balance between conversation, action, and tool usage"
             badge={`${toolShare}% action driven`}
           />
           <div className="pattern-body">
-            <div
-              className="tool-share-ring"
-              style={{ "--tool-share": `${toolShare * 3.6}deg` }}
-            >
-              <div><strong>{toolShare}%</strong><span>tool events</span></div>
-            </div>
-            <dl className="pattern-stats">
-              <div><dt><Wrench size={13} /> Tool calls</dt><dd>{replay.stats.toolCalls}</dd></div>
-              <div><dt><MessageSquareText size={13} /> Messages</dt><dd>{replay.stats.messages}</dd></div>
-              <div><dt><ArrowUpRight size={13} /> Repeated calls</dt><dd>{totals.exactRepeats}</dd></div>
-              <div><dt><FileCode2 size={13} /> Files inspected</dt><dd>{totals.uniqueReads}</dd></div>
-            </dl>
+            <section className="pattern-breakdown">
+              <h3>Event mix</h3>
+              <div className="event-breakdown-content">
+                <div
+                  className="tool-share-ring"
+                  style={{ "--tool-share": `${toolShare * 3.6}deg` }}
+                >
+                  <div><strong>{toolShare}%</strong><span>tool events</span></div>
+                </div>
+                <dl className="pattern-stats">
+                  <div><dt><Wrench size={13} /> Tool calls</dt><dd>{replay.stats.toolCalls}</dd></div>
+                  <div><dt><MessageSquareText size={13} /> Messages</dt><dd>{replay.stats.messages}</dd></div>
+                  <div><dt><ArrowUpRight size={13} /> Repeated calls</dt><dd>{totals.exactRepeats}</dd></div>
+                  <div><dt><FileCode2 size={13} /> Files inspected</dt><dd>{totals.uniqueReads}</dd></div>
+                </dl>
+              </div>
+            </section>
+            <ToolUsageDonut items={analytics.toolRanking} onSelect={openTool} />
           </div>
-        </section>
-
-        <section className="analytics-panel tools-panel">
-          <PanelHeading
-            icon={Wrench}
-            title="Most used tools"
-            copy="Select a tool to inspect its calls, inputs, and touched files"
-            badge={`${totals.uniqueTools} unique`}
-          />
-          <Ranking
-            items={analytics.toolRanking}
-            empty="No tools were used."
-            onSelect={(item) => navigate(
-              `/analytics/tool/${encodeURIComponent(item.label)}?${params.toString()}`,
-            )}
-          />
         </section>
 
         <section className="analytics-two-column file-analytics">
